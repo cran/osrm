@@ -4,46 +4,37 @@
 \alias{osrmTable}
 \title{Get Travel Time Matrices Between Points}
 \usage{
-osrmTable(loc, locId, locLat, locLon, src = NULL, srcId, srcLat, srcLon,
-  dst = NULL, dstId, dstLat, dstLon)
+osrmTable(loc, src = NULL, dst = NULL)
 }
 \arguments{
-\item{loc}{data frame containing points identifiers, longitudes and latitudes 
-(WGS84). If loc parameter is used, all pair-wise distances are computed.}
+\item{loc}{a data frame containing 3 fields: points identifiers, longitudes 
+and latitudes (WGS84). It can also be a SpatialPointsDataFrame or a 
+SpatialPolygonsDataFrame, then row names are used as identifiers.
+If loc parameter is used, all pair-wise distances are computed.}
 
-\item{locId}{identifier field in loc.}
+\item{src}{a data frame containing origin points identifiers, longitudes 
+and latitudes (WGS84). It can also be a SpatialPointsDataFrame or a 
+SpatialPolygonsDataFrame, then row names are used as identifiers. 
+If dst and src parameters are used, only pairs between scr/dst are computed.}
 
-\item{locLat}{latitude field in loc.}
-
-\item{locLon}{longitude field in loc.}
-
-\item{src}{data frame containing origin points identifiers, longitudes and latitudes 
-(WGS84). If dst and src parameters are used, only pairs between scr/dst are computed.}
-
-\item{srcId}{identifier field in src}
-
-\item{srcLat}{latitude fiels in src}
-
-\item{srcLon}{longitude field in src}
-
-\item{dst}{data frame containing destination points identifiers, longitudes and latitudes 
-(WGS84). If dst and src parameters are used, only pairs between scr/dst are computed.}
-
-\item{dstId}{identifier field in dst}
-
-\item{dstLat}{latitude field in dst}
-
-\item{dstLon}{longitude field in dst}
+\item{dst}{a data frame containing destination points identifiers, longitudes 
+and latitudes (WGS84). It can also be a SpatialPointsDataFrame or a 
+SpatialPolygonsDataFrame, then row names are used as identifiers.}
 }
 \value{
 A list containing 3 data frames is returned. 
-distance_table is the matrix of travel times (in minutes), 
-source_coordinates and destination_coordinates are the coordinates of 
-the origin and destination points actually used to compute the travel times.
+durations is the matrix of travel times (in minutes), 
+sources and destinations are the coordinates of 
+the origin and destination points actually used to compute the travel 
+times (WGS84).
 }
 \description{
-Build and send OSRM API queries to get travel time matrices between points. 
-This function interface the \emph{table} OSRM service.
+Build and send OSRM API queries to get travel time matrices 
+between points. This function interfaces the \emph{table} OSRM service.
+}
+\details{
+If loc, src or dst are data frames we assume that the 3 first 
+columns of the data.frame are: identifiers, longitudes and latitudes.
 }
 \note{
 The public OSRM API does not allow more than 10 000 
@@ -57,19 +48,32 @@ table query).
 \dontrun{
 # Load data
 data("com")
+
+# Inputs are data frames  
 # Travel time matrix
-distCom <- osrmTable(loc = com[1:50,], 
-                     locId = "comm_id", 
-                     locLat = "lat", 
-                     locLon = "lon")
+distCom <- osrmTable(loc = com[1:50, c("comm_id","lon","lat")])
 # First 5 rows and columns
-distCom$distance_table[1:5,1:5]
-distCom2 <- osrmTable(src = com[1:50,], 
-                      srcId = "comm_id", srcLat = "lat", srcLon = "lon", 
-                      dst = com[51:100,], 
-                      dstId = "comm_id", dstLat = "lat", dstLon = "lon")
+distCom$durations[1:5,1:5]
+
+# Travel time matrix with different sets of origins and destinations
+distCom2 <- osrmTable(src = com[1:10,c("comm_id","lon","lat")],
+                      dst = com[11:20,c("comm_id","lon","lat")])
 # First 5 rows and columns
-distCom2$distance_table[1:5,1:5]
+distCom2$durations[1:5,1:5]
+
+
+# Inputs are SpatialPointsDataFrames
+distCom <- osrmTable(loc = src)
+# First 5 rows and columns
+distCom$durations[1:5,1:5]
+
+# Travel time matrix with different sets of origins and destinations
+distCom2 <- osrmTable(src = src, dst = dst)
+# First 5 rows and columns
+distCom2$durations[1:5,1:5]
 }
+}
+\seealso{
+\link{osrmIsochrone}
 }
 

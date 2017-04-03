@@ -12,9 +12,15 @@
 ## Description
 OSRM is a routing service based on OpenStreetMap data. See <http://project-osrm.org/> for more information. A public API exists but one can run its own instance. This package allows to compute distance (travel time and kilometric distance) between points and travel time matrices.
 
-This package relies on the usage of a running OSRM service (tested with version 5.0.0 of the OSRM API). 
-By default this service is the OSRM public API (http://router.project-osrm.org/). To change the OSRM server, change the osrm.server option:
-`options(osrm.server = "http://address.of.the.server/")`
+This package relies on the usage of a running OSRM service (tested with version 5.0.0 of the OSRM API).
+By default, this service is the OSRM demo server (http://router.project-osrm.org/). If you plan to use the OSRM demo server you should read the [OSRM API Usage Policy](https://github.com/Project-OSRM/osrm-backend/wiki/Api-usage-policy).
+You should also take into account "that there are no guarantees regarding availability, stability or correctness of results. It's server to demonstrate OSRM, not a production-ready API." [Demo Server](https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server)
+To change the OSRM server, change the osrm.server option:
+`options(osrm.server = "http://address.of.the.server/")`. 
+To change the profile (driving is set by default), use the osrm.profile option:
+`options(osrm.profile = "name.of.the.profile")`
+
+
 
 ## Features
 
@@ -36,18 +42,18 @@ library(osrm)
 # Load data
 data("com")
 # Travel time matrix
-distCom <- osrmTable(loc = com[1:50, c("comm_id","lon","lat")])
+distCom <- osrmTable(loc = com[1:50, c("name","lon","lat")])
 # First 5 rows and columns
-distCom$durattion[1:5,1:5]
+distCom$duration[1:5,1:5]
 ```
 <table border=1>
-<tr> <th>  </th> <th> FR3162292119 </th> <th> FR3162212035 </th> <th> BE241011 </th> <th> BE241024 </th> <th> FR3162270520 </th>  </tr>
-  <tr> <td align="right"> FR3162292119 </td> <td align="right"> 0.0 </td> <td align="right"> 5.4 </td> <td align="right"> 95.1 </td> <td align="right"> 91.6 </td> <td align="right"> 7.5 </td> </tr>
-  <tr> <td align="right"> FR3162212035 </td> <td align="right"> 4.9 </td> <td align="right"> 0.0 </td> <td align="right"> 98.3 </td> <td align="right"> 94.7 </td> <td align="right"> 7.1 </td> </tr>
-  <tr> <td align="right"> BE241011 </td> <td align="right"> 94.2 </td> <td align="right"> 97.3 </td> <td align="right"> 0.0 </td> <td align="right"> 10.4 </td> <td align="right"> 93.5 </td> </tr>
-  <tr> <td align="right"> BE241024 </td> <td align="right"> 90.8 </td> <td align="right"> 93.8 </td> <td align="right"> 10.4 </td> <td align="right"> 0.0 </td> <td align="right"> 90.0 </td> </tr>
-  <tr> <td align="right"> FR3162270520 </td> <td align="right"> 7.0 </td> <td align="right"> 6.9 </td> <td align="right"> 93.5 </td> <td align="right"> 90.0 </td> <td align="right"> 0.0 </td> </tr>
-</table>
+<tr> <th>  </th> <th> Bethune </th> <th> Annezin </th> <th> Denderleeuw </th> <th> Haaltert </th> <th> Locon </th>  </tr>
+  <tr> <td align="right"> Bethune </td> <td align="right"> 0.00 </td> <td align="right"> 5.40 </td> <td align="right"> 95.10 </td> <td align="right"> 91.60 </td> <td align="right"> 7.50 </td> </tr>
+  <tr> <td align="right"> Annezin </td> <td align="right"> 4.90 </td> <td align="right"> 0.00 </td> <td align="right"> 98.30 </td> <td align="right"> 94.70 </td> <td align="right"> 7.10 </td> </tr>
+  <tr> <td align="right"> Denderleeuw </td> <td align="right"> 94.20 </td> <td align="right"> 97.30 </td> <td align="right"> 0.00 </td> <td align="right"> 10.40 </td> <td align="right"> 93.50 </td> </tr>
+  <tr> <td align="right"> Haaltert </td> <td align="right"> 90.80 </td> <td align="right"> 93.80 </td> <td align="right"> 10.40 </td> <td align="right"> 0.00 </td> <td align="right"> 90.00 </td> </tr>
+  <tr> <td align="right"> Locon </td> <td align="right"> 7.00 </td> <td align="right"> 6.90 </td> <td align="right"> 93.50 </td> <td align="right"> 90.00 </td> <td align="right"> 0.00 </td> </tr>
+   </table>
 
 
 ### `osrmRoute`
@@ -58,14 +64,17 @@ library(osrm)
 data("com")
 
 # Travel path between SpatialPointsDataFrame
-route <- osrmRoute(src = src[1,], 
-                   dst = dst[1,],
-                   sp = TRUE)
-plot(route, lty = 2, lwd = 2)
-plot(src[1,], pch = 20, col = "green", cex = 3, add = TRUE)             
-plot(dst[1,], pch = 20, col = "red", cex = 3, add = TRUE) 
+route <- osrmRoute(src = src[1,], dst = dst[1,], sp = TRUE)
+if(require("cartography")){
+  osm <- getTiles(spdf = route, crop = TRUE, type = "osmtransport")
+  tilesLayer(osm)
+  plot(route, lwd = 5, col = "blue", add = TRUE)
+  plot(src[1,], pch = 20, col = "green", cex = 5, add = TRUE)             
+  plot(dst[1,], pch = 20, col = "red", cex = 5, add = TRUE) 
+  dev.off()
+}
 ```
-![](http://rgeomatic.hypotheses.org/files/2016/04/viageom.png)
+![](http://rgeomatic.hypotheses.org/files/2016/05/osrmRoute.png)
 
 
 ### `osrmTrip`
@@ -76,19 +85,19 @@ library(osrm)
 data("com")
 
 # Get a trip with a SpatialPointsDataFrame
-trips <- osrmTripGeom(loc = src)
+trips <- osrmTrip(loc = src)
 
 # Map
 if(require("cartography")){
-  osm <- getTiles(spdf = trips[[1]]$trip, crop = TRUE)
+  osm <- getTiles(spdf = trips[[1]]$trip, crop = TRUE, type = "osmtransport")
   tilesLayer(osm)
-  plot(src, pch = 20, col = "red", cex = 2, add = TRUE)
-  plot(trips[[1]]$trip, add = TRUE, lwd=2)
+  plot(trips[[1]]$trip, add = TRUE, col = 1:5, lwd = 5)
+  plot(src, pch = 21, bg = "red", cex = 2, col = "black", add = TRUE)
 }
 
 ```
 
-![](http://rgeomatic.hypotheses.org/files/2016/04/trips.png)
+![](http://rgeomatic.hypotheses.org/files/2016/05/osrmTrip.png)
 
 ### `osrmIsochrone`
 
@@ -102,21 +111,21 @@ iso <- osrmIsochrone(loc = src[6,], breaks = seq(from = 0,to = 30, by = 5))
 
 # Map
 if(require("cartography")){
-  osm <- getTiles(spdf = iso, crop = TRUE)
+  osm <- getTiles(spdf = iso, crop = TRUE, type = "osmtransport")
   tilesLayer(osm)
   breaks <- sort(c(unique(iso$min), max(iso$max)))
   pal <- paste(carto.pal("taupe.pal", length(breaks)-1), "95", sep="")
-  
   cartography::choroLayer(spdf = iso, df = iso@data,
                           var = "center", breaks = breaks,
-                          border = "grey50", col = pal,
+                          border = "grey50", lwd = 0.5, col = pal,
                           legend.pos = "topleft",legend.frame = TRUE, 
-                          legend.title.txt = "Isochrones\n(min)", 
+                          legend.title.txt = "Driving Time\nto Renescure\n(min)", 
                           add = TRUE)
-  plot(src[6,], add=T)
+  plot(src[6,], cex = 2, pch = 20, col ="red", add=T)
+  text(src[6,], label = "Renescure", pos = 3)
 }
 ```
-![](http://rgeomatic.hypotheses.org/files/2016/04/iso.png)
+![](http://rgeomatic.hypotheses.org/files/2016/05/osrmIsochrone.png)
 
 
 ## Installation
@@ -132,3 +141,6 @@ devtools::install_github("rCarto/osrm")
 install.packages("osrm")
 ```
 
+## Community Guidelines
+
+One can contribute to the package through [pull requests](https://github.com/rCarto/osrm/pulls) and report issues or ask questions [here](https://github.com/rCarto/osrm/issues).

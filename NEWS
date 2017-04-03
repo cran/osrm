@@ -1,4 +1,16 @@
-# osrm version 3.0.0 (Release date: 2016-0X-XX)
+
+# osrm version 3.0.1 (Release date: 2017-03-31)
+
+## Minor changes
+* Enable changing the profile via options(osrm.profile = "name.of.the.profile")(driving is set by default).  
+* Small fixes and adaptations to the API (in osrmTrip  mainly)
+
+
+
+
+
+
+# osrm version 3.0.0 (Release date: 2016-05-10)
 
 This is a major release. Changes have been made to reflect the evolution of the OSRM routing service/engine.
 The backward compatibility is not ensured. The osrm package works with the version 5.0.0 of the OSRM API.

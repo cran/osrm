@@ -20,39 +20,37 @@
 #' and travel distance (in kilometers).
 #' @examples
 #' \dontrun{
-#' 
 #' # Load data
-#' data("com")
+#' data("berlin")
+#' 
 #' # Travel path between points
-#' route <- osrmRoute(src = com[1, c("comm_id", "lon","lat")],
-#'                    dst = com[15, c("comm_id", "lon","lat")])
+#' route <- osrmRoute(src = apotheke.df[1, c("id", "lon","lat")],
+#'                    dst = apotheke.df[15, c("id", "lon","lat")])
 #' # Display the path
-#' plot(com[c(1,15),3:4], asp =1, col = "red", pch = 20, cex = 1.5)
-#' points(route[,1:2], type = "l", lty = 2)
-#' text(com[c(1,15),3:4], labels = com[c(1,15),2], pos = 2)
+#' plot(route[,1:2], type = "l", lty = 2, asp =1)
+#' points(apotheke.df[c(1,15),2:3], col = "red", pch = 20, cex = 1.5)
+#' text(apotheke.df[c(1,15),2:3], labels = c("A","B"), pos = 1)
 #' 
 #' # Travel path between points - output a SpatialLinesDataFrame
-#' route2 <- osrmRoute(src=c("Bethune", 2.64781, 50.5199),
-#'                     dst = c("Cassel", 2.486388, 50.80016),
-#'                     sp = TRUE)
+#' route2 <- osrmRoute(src = c("A", 13.23889, 52.54250),
+#'                     dst = c("B", 13.45363, 52.42926),
+#'                     sp = TRUE, overview = "full")
+#' 
 #' # Display the path
-#' plot(com[c(1,16),3:4], asp =1, col = "red", pch = 20, cex = 1.5)
-#' plot(route2, lty = 2, add=TRUE)
-#' text(com[c(1,16),3:4], labels = com[c(1,16),2], pos = 2)
-#'
+#' plot(route2, lty = 1,lwd = 4, asp = 1)
+#' plot(route2, lty = 1, lwd = 1, col = "white", add=TRUE)
+#' points(x = c(13.23889, 13.45363), y = c(52.54250,52.42926), 
+#'        col = "red", pch = 20, cex = 1.5)
+#' text(x = c(13.23889, 13.45363), y = c(52.54250,52.42926), 
+#'      labels = c("A","B"), pos = 2)
+#' 
 #' # Input is SpatialPointsDataFrames
-#' route3 <- osrmRoute(src = src[1,], dst = dst[1,], sp = TRUE)
+#' route3 <- osrmRoute(src = apotheke.sp[1,], dst = apotheke.sp[2,], sp = TRUE)
 #' route3@data
 #' }
 #' @export
 osrmRoute <- function(src, dst, overview = "simplified", sp = FALSE){
   tryCatch({
-    
-    # src = com[1, c("comm_id", "lon","lat")]
-    # dst = com[2, c("comm_id", "lon","lat")]
-    # sp=TRUE
-    # overview = "simplified"
-    
     oprj <- NA
     if(testSp(src)){
       oprj <- sp::proj4string(src)
@@ -69,13 +67,10 @@ osrmRoute <- function(src, dst, overview = "simplified", sp = FALSE){
     # build the query
     req <- paste(getOption("osrm.server"),
                  "route/v1/", getOption("osrm.profile"), "/", 
-                 src[2], ",", src[3],
-                 ";",
-                 dst[2],",",dst[3], 
+                 src[2], ",", src[3], ";", dst[2],",",dst[3], 
                  "?alternatives=false&geometries=polyline&steps=false&overview=",
-                 tolower(overview),
-                 sep="")
-    
+                 tolower(overview), sep="")
+
     # Sending the query
     resRaw <- RCurl::getURL(utils::URLencode(req),
                             useragent = "'osrm' R package")
@@ -86,11 +81,11 @@ osrmRoute <- function(src, dst, overview = "simplified", sp = FALSE){
     }
     # Parse the results
     res <- jsonlite::fromJSON(resRaw)
-
+    
     # Error handling
     e <- simpleError(res$message)
     if(res$code != "Ok"){stop(e)}
-
+    
     if (overview == FALSE){
       return(round(c(duration = res$routes$duration/60,
                      distance = res$routes$distance/1000), 2))
@@ -101,7 +96,7 @@ osrmRoute <- function(src, dst, overview = "simplified", sp = FALSE){
     }
     # Coordinates of the line
     geodf <- gepaf::decodePolyline(res$routes$geometry)[,c(2,1)]
-
+    
     # Convert to SpatialLinesDataFrame
     if (sp == TRUE){
       routeLines <- sp::Lines(slinelist = sp::Line(geodf[,1:2]),
@@ -116,9 +111,10 @@ osrmRoute <- function(src, dst, overview = "simplified", sp = FALSE){
       if (!is.na(oprj)){
         geodf <- sp::spTransform(geodf, oprj)
       }
+      names(geodf)[1:2] <- c("src", "dst")
     }
     return(geodf)
-  }, error=function(e) {message("osrmRoute function returns an error: \n", e)})
+  }, error=function(e) {message("OSRM returned an error:\n", e)})
   return(NULL)
 }
 

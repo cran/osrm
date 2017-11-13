@@ -4,7 +4,7 @@
 \alias{osrmTable}
 \title{Get Travel Time Matrices Between Points}
 \usage{
-osrmTable(loc, src = NULL, dst = NULL)
+osrmTable(loc, src = NULL, dst = NULL, gepaf = FALSE)
 }
 \arguments{
 \item{loc}{a data frame containing 3 fields: points identifiers, longitudes 
@@ -20,6 +20,10 @@ If dst and src parameters are used, only pairs between scr/dst are computed.}
 \item{dst}{a data frame containing destination points identifiers, longitudes 
 and latitudes (WGS84). It can also be a SpatialPointsDataFrame or a 
 SpatialPolygonsDataFrame, then row names are used as identifiers.}
+
+\item{gepaf}{a boolean indicating if coordinates are sent encoded with the
+google encoded algorithm format (TRUE) or not (FALSE). Must be FALSE if using
+the public OSRM API.}
 }
 \value{
 A list containing 3 data frames is returned. 
@@ -37,40 +41,36 @@ If loc, src or dst are data frames we assume that the 3 first
 columns of the data.frame are: identifiers, longitudes and latitudes.
 }
 \note{
-The public OSRM API does not allow more than 10 000 
-distances in query result. \cr
-If you use an other OSRM API service, make sure that 
-more distances are allowed in results 
-(i.e. the "max-table-size" argument, Max. locations supported in distance 
-table query).
+If you want to get a large number of distances make sure to set the 
+"max-table-size" argument (Max. locations supported in table) of the OSRM 
+server accordingly.
 }
 \examples{
 \dontrun{
 # Load data
-data("com")
+data("berlin")
 
-# Inputs are data frames  
+# Inputs are data frames
 # Travel time matrix
-distCom <- osrmTable(loc = com[1:50, c("comm_id","lon","lat")])
+distA <- osrmTable(loc = apotheke.df[1:50, c("id","lon","lat")])
 # First 5 rows and columns
-distCom$durations[1:5,1:5]
+distA$durations[1:5,1:5]
 
 # Travel time matrix with different sets of origins and destinations
-distCom2 <- osrmTable(src = com[1:10,c("comm_id","lon","lat")],
-                      dst = com[11:20,c("comm_id","lon","lat")])
+distA2 <- osrmTable(src = apotheke.df[1:10,c("id","lon","lat")],
+                    dst = apotheke.df[11:20,c("id","lon","lat")])
 # First 5 rows and columns
-distCom2$durations[1:5,1:5]
-
+distA2$durations[1:5,1:5]
 
 # Inputs are SpatialPointsDataFrames
-distCom <- osrmTable(loc = src)
+distA3 <- osrmTable(loc = apotheke.sp[1:10,])
 # First 5 rows and columns
-distCom$durations[1:5,1:5]
+distA3$durations[1:5,1:5]
 
 # Travel time matrix with different sets of origins and destinations
-distCom2 <- osrmTable(src = src, dst = dst)
+distA4 <- osrmTable(src = apotheke.sp[1:10,], dst = apotheke.sp[11:20,])
 # First 5 rows and columns
-distCom2$durations[1:5,1:5]
+distA4$durations[1:5,1:5]
 }
 }
 \seealso{

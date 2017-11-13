@@ -3,7 +3,7 @@
 #' @description An interface between R and the OSRM API.\cr
 #' OSRM is a routing
 #' service based on OpenStreetMap data. See <http://project-osrm.org/> for more
-#' information. A public API exists but one can run its own instance. This package
+#' information. This package
 #' allows to compute distances (travel time and kilometric distance) between points
 #' and travel time matrices.\cr
 #' \itemize{
@@ -15,16 +15,7 @@
 #' 
 #' @note
 #' This package relies on the usage of a running OSRM service (tested with 
-#' version 5.0.0 of the OSRM API).\cr
-#' By default, this service is the OSRM demo server (http://router.project-osrm.org/).
-#' If you plan to use the OSRM demo server you should read the 
-#' \href{https://github.com/Project-OSRM/osrm-backend/wiki/Api-usage-policy}{OSRM API Usage Policy}.\cr
-#' You should also take into account "that there are no guarantees regarding 
-#' availability, stability or correctness of results. It's server to demonstrate 
-#' OSRM, not a production-ready API." 
-#' \href{https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server}{Demo Server}\cr
-#' 
-#' 
+#' version 5.12.0 of the OSRM API).\cr
 #' To change the OSRM server, change the \code{osrm.server} option:\cr 
 #' \code{options(osrm.server = "http://address.of.the.server/")}. \cr\cr
 #' To change the profile (driving is set by default), use the \code{osrm.profile} 
@@ -34,30 +25,21 @@
 NULL
 
 
-#' @title Communes Coordinates
-#' @name com
-#' @description Coordinates of a set of communes in France, Belgium and Luxembourg. Coordinates are in WGS84.
-#' @source UMS RIATE
+
+
+
+#' @title SpatialPointsDataFrame of 100 Random Pharmacies in Berlin
+#' @name apotheke.sp
+#' @description 100 random pharmacies in Berlin. 
+#' The projection is WGS 84 / UTM zone 34N.
+#' @source © OpenStreetMap contributors - \url{https://www.openstreetmap.org/copyright/en}.
 #' @docType data
 NULL
 
-
-#' @title SpatialPointsDataFrame of 10 Communes in France And Belgium
-#' @name src
-#' @description 10 communes in France & Belgium. The projection is RGF93 / Lambert-93.
-#' @source UMS RIATE
+#' @title Coordinates of 100 Random Pharmacies in Berlin
+#' @name apotheke.df
+#' @description A data.frame of coordinates of 100 random pharmacies in Berlin. 
+#' The projection is WGS 84.
+#' @source © OpenStreetMap contributors - \url{https://www.openstreetmap.org/copyright/en}.
 #' @docType data
 NULL
-
-
-#' @title SpatialPointsDataFrame of 10 Communes in France
-#' @name dst
-#' @description 10 communes in France. The projection is RGF93 / Lambert-93.
-#' @source UMS RIATE
-#' @docType data
-NULL
-
-
-
-
-

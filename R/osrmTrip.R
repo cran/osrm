@@ -21,32 +21,37 @@
 #' @examples
 #' \dontrun{
 #' # Load data
-#' data("com")
+#' data("berlin")
 #' 
 #' # Get a trip with a id lat lon data.frame
-#' trips <- osrmTrip(loc = com[1101:1150, c(1,3,4)])
+#' trips <- osrmTrip(loc = apotheke.df)
 #' 
 #' # Display the trip
-#' plot(trips[[1]]$trip , col = 1:5)
-#' points(com[1101:1150, 3:4], pch = 20, col = "red", cex = 0.5)
+#' plot(trips[[1]]$trip, col = "black", lwd = 4)
+#' plot(trips[[1]]$trip, col = c("red", "white"), lwd = 1, add=T)
+#' points(apotheke.df[, 2:3], pch = 21, bg = "red", cex = 1)
 #' 
 #' # Map
 #' if(require("cartography")){
-#'   osm <- getTiles(spdf = trips[[1]]$trip, crop = TRUE, type = "osmgrayscale")
-#'   tilesLayer(osm)
-#'   plot(trips[[1]]$trip, col = 1:5, add = TRUE)
-#'   points(com[1101:1150, 3:4], pch = 20, col = "red", cex = 0.5)
+#'   osm <- getTiles(x = trips[[1]]$trip, crop = TRUE,
+#'                   type = "cartolight", zoom = 11)
+#'   tilesLayer(x = osm)
+#'   plot(trips[[1]]$trip, col = "black", lwd = 4, add=T)
+#'   plot(trips[[1]]$trip, col = c("red", "white"), lwd = 1, add=T)
+#'   points(apotheke.df[, 2:3], pch = 21, bg = "red", cex = 1)
 #' }
 #' 
 #' # Get a trip with a SpatialPointsDataFrame
-#' trips <- osrmTrip(loc = src)
+#' trips <- osrmTrip(loc = apotheke.sp[1:10,])
 #' 
 #' # Map
 #' if(require("cartography")){
-#'   osm <- getTiles(spdf = trips[[1]]$trip, crop = TRUE, type = "osmgrayscale")
-#'   tilesLayer(osm)
-#'   plot(src, pch = 20, col = "red", cex = 2, add = TRUE)
-#'   plot(trips[[1]]$trip, col = 1:5, add = TRUE, lwd=2)
+#'   osm <- getTiles(x = trips[[1]]$trip, crop = TRUE,
+#'                   type = "cartolight", zoom = 11)
+#'   tilesLayer(x = osm)
+#'   plot(trips[[1]]$trip, col = "black", lwd = 4, add=T)
+#'   plot(trips[[1]]$trip, col = c("red", "white"), lwd = 1, add=T)
+#'   plot(apotheke.sp[1:10,], pch = 21, bg = "red", cex = 1, add=T)
 #' }
 #' }
 osrmTrip <- function(loc, overview = "simplified"){
@@ -61,19 +66,28 @@ osrmTrip <- function(loc, overview = "simplified"){
     }
     
     # Build the query
+    # req <- paste(getOption("osrm.server"),
+    #              "trip/v1/", getOption("osrm.profile"), "/polyline(", 
+    #              gepaf::encodePolyline(loc[,c("lat","lon")]),
+    #              ")?steps=false&geometries=geojson&overview=",
+    #              tolower(overview), sep = "")
     req <- paste(getOption("osrm.server"),
-                 "trip/v1/", getOption("osrm.profile"), "/polyline(", 
-                 gepaf::encodePolyline(loc[,c("lat","lon")]),
-                 ")?steps=false&geometries=geojson&overview=",
+                 "trip/v1/", getOption("osrm.profile"), "/", 
+                 paste(loc$lon, loc$lat, sep=",",collapse = ";"),
+                 "?steps=false&geometries=geojson&overview=",
                  tolower(overview), sep = "")
+    paste(loc$lon, loc$lat, sep=",",collapse = ";")
+    
+    
     # Send the query
     ua <- "'osrm' R package"
     resRaw <- RCurl::getURL(utils::URLencode(req), useragent = ua)
 
-    if (resRaw=="") {
-      stop("OSRM returned an empty string.", call. = FALSE)
-    }
-    
+
+    # if (resRaw=="") {
+    #   stop("OSRM returned an empty string.", call. = FALSE)
+    # }
+    # 
     # Parse the results
     res <- jsonlite::fromJSON(resRaw)
     
@@ -145,7 +159,7 @@ osrmTrip <- function(loc, overview = "simplified"){
       trips[[nt]] <- list(trip = sldf, summary = tripSummary)
     }
     return(trips)
-  }, error = function(e) { message("osrmTrip function returns an error: \n", e)})
+  }, error = function(e) { message("OSRM returned an error:\n", e)})
   return(NULL)
 }
 

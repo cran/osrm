@@ -29,39 +29,42 @@ SpatialPolygonsDataFrame of isochrones.
 \examples{
 \dontrun{
 # Load data
-data("com")
+data("berlin")
 
 # Get isochones with lon/lat coordinates, default breaks
-iso <- osrmIsochrone(loc = c(5.936036, 49.24882))
-plot(iso)
-points(5.936036, 49.24882, pch = 20, col = "red")
+iso <- osrmIsochrone(loc = c(13.43853,52.47728), breaks = seq(0,15,1), res = 70)
+plot(iso, col = colorRampPalette(colors = c('grey80', 'grey20'))(14))
 
 # Map
 if(require("cartography")){
-  osm <- getTiles(spdf = iso, crop = TRUE, type = "osmgrayscale")
-  tilesLayer(osm)
+  osm <- getTiles(x = iso, crop = TRUE, type = "osmgrayscale")
+  tilesLayer(x = osm)
   breaks <- sort(c(unique(iso$min), max(iso$max)))
-  cartography::choroLayer(spdf = iso, df = iso@data,
+  cartography::choroLayer(spdf = iso,
                           var = "center", breaks = breaks,
+                          col = paste0(rev(carto.pal("green.pal",
+                                                     length(breaks)+1)),99),
                           border = NA,
-                          legend.pos = "topleft",legend.frame = TRUE, 
-                          legend.title.txt = "Isochrones\\n(min)", 
+                          legend.pos = "topleft",legend.frame = TRUE,
+                          legend.title.txt = "Isochrones\\n(min)",
                           add = TRUE)
 }
 
+
 # Get isochones with a SpatialPointsDataFrame, custom breaks
-iso2 <- osrmIsochrone(loc = src[7,], breaks = seq(from = 0,to = 30, by = 5))
+iso2 <- osrmIsochrone(loc = apotheke.sp[10,],
+                      breaks = seq(from = 0, to = 16, by = 2))
 
 # Map
 if(require("cartography")){
-  osm2 <- getTiles(spdf = iso2, crop = TRUE, type = "osmgrayscale")
-  tilesLayer(osm2)
+  osm2 <- getTiles(x = iso2, crop = FALSE, type = "osmgrayscale")
+  tilesLayer(x = osm2)
   breaks2 <- sort(c(unique(iso2$min), max(iso2$max)))
-  cartography::choroLayer(spdf = iso2, df = iso2@data,
+  cartography::choroLayer(spdf = iso2,
                           var = "center", breaks = breaks2,
                           border = NA,
-                          legend.pos = "topleft",legend.frame = TRUE, 
-                          legend.title.txt = "Isochrones\\n(min)", 
+                          legend.pos = "topleft",legend.frame = TRUE,
+                          legend.title.txt = "Isochrones\\n(min)",
                           add = TRUE)
 }
 }

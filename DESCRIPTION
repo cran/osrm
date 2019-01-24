@@ -2,8 +2,7 @@ Package: osrm
 Type: Package
 Title: Interface Between R and the OpenStreetMap-Based Routing Service
         OSRM
-Version: 3.1.1
-Date: 2018-03-12
+Version: 3.2.0
 Authors@R: c(person("Timothée", "Giraud", email = "timothee.giraud@cnrs.fr", role = c("cre","aut")),
     person("Robin", "Cura", role = c("ctb")), person("Matthieu", "Viry", role = c("ctb")))
 Description: An interface between R and the OSRM API. OSRM is a routing
@@ -19,12 +18,12 @@ Suggests: cartography (>= 2.0.1)
 URL: https://github.com/rCarto/osrm
 BugReports: https://github.com/rCarto/osrm/issues
 Encoding: UTF-8
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 NeedsCompilation: no
-Packaged: 2018-03-12 09:40:29 UTC; tim
+Packaged: 2019-01-24 14:43:05 UTC; tim
 Author: Timothée Giraud [cre, aut],
   Robin Cura [ctb],
   Matthieu Viry [ctb]
 Maintainer: Timothée Giraud <timothee.giraud@cnrs.fr>
 Repository: CRAN
-Date/Publication: 2018-03-12 10:34:32 UTC
+Date/Publication: 2019-01-24 15:10:02 UTC

@@ -34,11 +34,15 @@ sfToDf <- function(x){
   coords <- sf::st_coordinates(x)
   # this function takes an sf and transforms it into a dataframe
   x <- data.frame(id = row.names(x), 
-                  lon = round(coords[,1],6), 
-                  lat = round(coords[,2],6), 
+                  lon = format(coords[,1], scientific = FALSE, justify = "none",
+                               trim = TRUE, nsmall = 5, digits = 5), 
+                  lat = format(coords[,2], scientific = FALSE, justify = "none",
+                               trim = TRUE, nsmall = 5, digits = 5), 
                   stringsAsFactors = FALSE)
   return(x)
 }
+
+
 
 ## osrmIsochrone Utils
 #' @import sf
@@ -71,7 +75,7 @@ isopoly <- function(x, breaks,
   
   # invalid polygons mgmnt
   st_geometry(iso) <- lwgeom::st_make_valid(st_geometry(iso))
-  if(methods::is(st_geometry(iso),"sfc_GEOMETRY")){
+  if(methods::is(st_geometry(iso),c("sfc_GEOMETRYCOLLECTION", "sfc_GEOMETRY"))){
     st_geometry(iso) <-   sf::st_collection_extract(st_geometry(iso), "POLYGON")
   }
   # get rid of out of breaks polys
@@ -139,10 +143,16 @@ tableLoc <- function(loc, gepaf = FALSE){
   # Query build
   if (gepaf == TRUE){
     tab <- paste0(getOption("osrm.server"), "table/v1/", getOption("osrm.profile"), "/polyline(")
+    loc$lat <- as.numeric(as.character(loc$lat))
+    loc$lon <- as.numeric(as.character(loc$lon))
     tab <- paste0(tab, gepaf::encodePolyline(loc[,c("lat","lon")]),")")
   }else{
     tab <- paste0(getOption("osrm.server"), "table/v1/", getOption("osrm.profile"), "/")
-    tab <- paste0(tab, paste(loc$lon, loc$lat, sep=",",collapse = ";"))
+    tab <- paste0(tab, paste(format(loc$lon, scientific = FALSE, justify = "none",
+                                    trim = TRUE, nsmall = 5, digits = 5), 
+                             format(loc$lat, scientific = FALSE, justify = "none",
+                                    trim = TRUE, nsmall = 5, digits = 5), 
+                             sep=",",collapse = ";"))
   }
   return(tab)
 }

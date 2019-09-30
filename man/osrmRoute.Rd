@@ -4,41 +4,48 @@
 \alias{osrmRoute}
 \title{Get the Shortest Path Between Two Points}
 \usage{
-osrmRoute(src, dst, overview = "simplified", exclude = NULL, sp,
+osrmRoute(src, dst, loc, overview = "simplified", exclude = NULL, sp,
   returnclass)
 }
 \arguments{
-\item{src}{a numeric vector of identifier, longitude and latitude (WGS84), a 
-SpatialPointsDataFrame, a SpatialPolygonsDataFrame or an sf object of the origine 
-point.}
+\item{src}{a vector of identifier, longitude and latitude (WGS84), a vector 
+of longitude and latitude (WGS84), a SpatialPointsDataFrame, a 
+SpatialPolygonsDataFrame or an sf object of the origine point.}
 
-\item{dst}{a numeric vector of identifier, longitude and latitude (WGS84), a 
-SpatialPointsDataFrame, a SpatialPolygonsDataFrame or an sf object of the destination 
-point.}
+\item{dst}{a vector of identifier, longitude and latitude (WGS84), a vector 
+of longitude and latitude (WGS84), a SpatialPointsDataFrame, a 
+SpatialPolygonsDataFrame or an sf object of the destination point.}
 
-\item{overview}{"full", "simplified" or FALSE. Add geometry either full (detailed), simplified 
-according to highest zoom level it could be display on, or not at all.}
+\item{loc}{a data.frame of identifier, longitude and latitude (WGS84), a 
+SpatialPointsDataFrame, a SpatialPolygonsDataFrame or an sf object of via 
+points. The first row is the origine, the last row is the destination.}
+
+\item{overview}{"full", "simplified" or FALSE. Use "full" to return the 
+detailed geometry, use "simplified" to return a simplified geometry, use 
+FALSE to return only time and distance.}
 
 \item{exclude}{pass an optional "exclude" request option to the OSRM API.}
 
-\item{sp}{deprecated, if sp is TRUE the function returns a SpatialLinesDataFrame.}
+\item{sp}{deprecated, if sp==TRUE the function returns a SpatialLinesDataFrame.}
 
 \item{returnclass}{if returnclass="sf" an sf LINESTRING is returned. 
-If returnclass="sp" a SpatialLineDataFrame is returned.}
+If returnclass="sp" a SpatialLineDataFrame is returned. If returnclass is not 
+set a data.frame of coordinates is returned.}
 }
 \value{
-If returnclass is not set, a data frame is returned. It contains the longitudes and latitudes of 
-the travel path between the two points.\cr
-If returnclass is set to "sp", a SpatialLinesDataFrame is returned. If returnclass is set to "sf", 
-an sf LINESTRING is returned. It contains 4 fields : 
-identifiers of origine and destination, travel time in minutes and travel distance in 
-kilometers.\cr
-If overview is FALSE, a named numeric vector is returned. It contains travel time (in minutes) 
-and travel distance (in kilometers).
+If returnclass is not set, a data frame is returned. It contains the 
+longitudes and latitudes of the travel path between the two points.\cr
+If returnclass is set to "sp", a SpatialLinesDataFrame is returned. \cr
+If returnclass is set to "sf", an sf LINESTRING is returned. \cr
+SpatialLinesDataFrame and sf LINESTRING contain 4 fields: identifiers of 
+origine and destination, travel time in minutes and travel distance in 
+kilometers.\cr\cr
+If overview is FALSE, a named numeric vector is returned. It contains travel 
+time (in minutes) and travel distance (in kilometers).
 }
 \description{
-Build and send an OSRM API query to get the travel geometry between two points.
-This function interfaces the \emph{route} OSRM service.
+Build and send an OSRM API query to get the travel geometry 
+between two points. This function interfaces the \emph{route} OSRM service.
 }
 \examples{
 \dontrun{
@@ -60,5 +67,22 @@ plot(st_geometry(apotheke.sf[c(1,16),]), col = "red", pch = 20, add = TRUE)
 route3 <- osrmRoute(src = apotheke.sf[1, ], dst = apotheke.df[16, ], 
                     overview = FALSE)
 route3
+
+# Using only coordinates
+route4 <-  osrmRoute(src = c(13.412, 52.502), 
+                     dst = c(13.454, 52.592),
+                     returnclass = "sf")
+plot(st_geometry(route4))
+
+# Using via points
+pts <- structure(
+ list(x = c(13.32500, 13.30688, 13.30519, 13.31025, 
+            13.4721, 13.56651, 13.55303, 13.37263, 13.50919, 13.5682), 
+      y = c(52.40566, 52.44491, 52.52084, 52.59318, 52.61063, 52.55317, 
+            52.50186, 52.49468, 52.46441, 52.39669)), 
+ class = "data.frame", row.names = c(NA, -10L))
+route5 <- osrmRoute(loc = pts, returnclass = "sf")
+plot(st_geometry(route5), col = "red", lwd = 2)
+points(pts, pch = 20, cex = 2)
 }
 }

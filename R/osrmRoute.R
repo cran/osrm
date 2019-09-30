@@ -1,27 +1,34 @@
 #' @name osrmRoute
 #' @title Get the Shortest Path Between Two Points
-#' @description Build and send an OSRM API query to get the travel geometry between two points.
-#' This function interfaces the \emph{route} OSRM service. 
-#' @param src a numeric vector of identifier, longitude and latitude (WGS84), a 
-#' SpatialPointsDataFrame, a SpatialPolygonsDataFrame or an sf object of the origine 
-#' point.
-#' @param dst a numeric vector of identifier, longitude and latitude (WGS84), a 
-#' SpatialPointsDataFrame, a SpatialPolygonsDataFrame or an sf object of the destination 
-#' point.
-#' @param overview "full", "simplified" or FALSE. Add geometry either full (detailed), simplified 
-#' according to highest zoom level it could be display on, or not at all. 
+#' @description Build and send an OSRM API query to get the travel geometry 
+#' between two points. This function interfaces the \emph{route} OSRM service. 
+#' @param src a vector of identifier, longitude and latitude (WGS84), a vector 
+#' of longitude and latitude (WGS84), a SpatialPointsDataFrame, a 
+#' SpatialPolygonsDataFrame or an sf object of the origine point.
+#' @param dst a vector of identifier, longitude and latitude (WGS84), a vector 
+#' of longitude and latitude (WGS84), a SpatialPointsDataFrame, a 
+#' SpatialPolygonsDataFrame or an sf object of the destination point.
+#' @param loc a data.frame of identifier, longitude and latitude (WGS84), a 
+#' SpatialPointsDataFrame, a SpatialPolygonsDataFrame or an sf object of via 
+#' points. The first row is the origine, the last row is the destination.
+#' @param overview "full", "simplified" or FALSE. Use "full" to return the 
+#' detailed geometry, use "simplified" to return a simplified geometry, use 
+#' FALSE to return only time and distance.
 #' @param exclude pass an optional "exclude" request option to the OSRM API. 
-#' @param sp deprecated, if sp is TRUE the function returns a SpatialLinesDataFrame.
+#' @param sp deprecated, if sp==TRUE the function returns a SpatialLinesDataFrame.
 #' @param returnclass if returnclass="sf" an sf LINESTRING is returned. 
-#' If returnclass="sp" a SpatialLineDataFrame is returned.
-#' @return If returnclass is not set, a data frame is returned. It contains the longitudes and latitudes of 
-#' the travel path between the two points.\cr
-#' If returnclass is set to "sp", a SpatialLinesDataFrame is returned. If returnclass is set to "sf", 
-#' an sf LINESTRING is returned. It contains 4 fields : 
-#' identifiers of origine and destination, travel time in minutes and travel distance in 
-#' kilometers.\cr
-#' If overview is FALSE, a named numeric vector is returned. It contains travel time (in minutes) 
-#' and travel distance (in kilometers).
+#' If returnclass="sp" a SpatialLineDataFrame is returned. If returnclass is not 
+#' set a data.frame of coordinates is returned. 
+#' @return
+#' If returnclass is not set, a data frame is returned. It contains the 
+#' longitudes and latitudes of the travel path between the two points.\cr
+#' If returnclass is set to "sp", a SpatialLinesDataFrame is returned. \cr
+#' If returnclass is set to "sf", an sf LINESTRING is returned. \cr
+#' SpatialLinesDataFrame and sf LINESTRING contain 4 fields: identifiers of 
+#' origine and destination, travel time in minutes and travel distance in 
+#' kilometers.\cr\cr
+#' If overview is FALSE, a named numeric vector is returned. It contains travel 
+#' time (in minutes) and travel distance (in kilometers).
 #' @importFrom sf st_as_sfc st_crs st_geometry st_sf st_as_sf st_transform
 #' @examples
 #' \dontrun{
@@ -43,62 +50,80 @@
 #' route3 <- osrmRoute(src = apotheke.sf[1, ], dst = apotheke.df[16, ], 
 #'                     overview = FALSE)
 #' route3
+#' 
+#' # Using only coordinates
+#' route4 <-  osrmRoute(src = c(13.412, 52.502), 
+#'                      dst = c(13.454, 52.592),
+#'                      returnclass = "sf")
+#' plot(st_geometry(route4))
+#' 
+#' # Using via points
+#' pts <- structure(
+#'  list(x = c(13.32500, 13.30688, 13.30519, 13.31025, 
+#'             13.4721, 13.56651, 13.55303, 13.37263, 13.50919, 13.5682), 
+#'       y = c(52.40566, 52.44491, 52.52084, 52.59318, 52.61063, 52.55317, 
+#'             52.50186, 52.49468, 52.46441, 52.39669)), 
+#'  class = "data.frame", row.names = c(NA, -10L))
+#' route5 <- osrmRoute(loc = pts, returnclass = "sf")
+#' plot(st_geometry(route5), col = "red", lwd = 2)
+#' points(pts, pch = 20, cex = 2)
 #' }
 #' @export
-osrmRoute <- function(src, dst, overview = "simplified", exclude = NULL,
-                      sp, returnclass){
-  tryCatch({
-    if(!missing(sp)){
-      warning("sp is deprecated; use returnclass instead.", call. = FALSE)
-      if(sp){
-        returnclass <- "sp"
-      }
+osrmRoute <- function(src, dst, loc, overview = "simplified", exclude = NULL,
+                       sp, returnclass){
+  if(!missing(sp)){
+    warning("sp is deprecated; use returnclass instead.", call. = FALSE)
+    if(sp){
+      returnclass <- "sp"
     }
-    
-    # input mgmt
-    oprj <- NA
-    if(testSp(src)){
-      src <- st_as_sf(src[1,])
-    }    
-    if(testSf(src)){
-      oprj <- st_crs(src)
-      x <- sfToDf(x = src)
-      src <- c(x[1,1],x[1,2], x[1,3])
-    }
-    if(testSp(dst)){
-      dst <- st_as_sf(dst[1,])
-    }
-    if(testSf(dst)){
-      oprj <- st_crs(dst)
-      x <- sfToDf(x = dst)
-      dst <- c(x[1,1],x[1,2], x[1,3])
-    }
-    exclude_str <- ""
-    if (!is.null(exclude)) {exclude_str <- paste("&exclude=", exclude, sep = "") }
-    # build the query
+  }
+  
+  exclude_str <- ""
+  
+  if(missing(loc)){
+    # From src to dst
+    src <- input_route(x = src, id = "src", single = TRUE)
+    dst <- input_route(x = dst, id = "dst", single = TRUE)
+    id1 <- src$id
+    id2 <- dst$id
+    oprj <- src$oprj
+    if (!is.null(exclude)) {exclude_str <- paste("&exclude=", exclude, sep = "")}
     req <- paste(getOption("osrm.server"),
                  "route/v1/", getOption("osrm.profile"), "/", 
-                 format(src[2],scientific = FALSE, trim = TRUE), ",", 
-                 format(src[3],scientific = FALSE, trim = TRUE), ";", 
-                 format(dst[2],scientific = FALSE, trim = TRUE),",",
-                 format(dst[3],scientific = FALSE, trim = TRUE), 
+                 src$lon, ",", src$lat, ";", dst$lon, ",", dst$lat, 
                  "?alternatives=false&geometries=polyline&steps=false&overview=",
                  tolower(overview), exclude_str, sep="")
-    
+  }else{
+    # from src to dst via x, y, z... (data.frame or sf input)
+    loc <- input_route(x = loc, single = FALSE)
+    oprj <- loc$oprj
+    id1 <- loc$id1
+    id2 <- loc$id2
+    if (!is.null(exclude)) {exclude_str <- paste("&exclude=", exclude, sep = "")}
+    req <- paste(getOption("osrm.server"),
+                 "route/v1/", getOption("osrm.profile"), "/", 
+                 paste0(apply(data.frame(loc$lon, loc$lat), 
+                              MARGIN = 1, FUN = paste0, collapse=","),
+                        collapse=";"),
+                 "?alternatives=false&geometries=polyline&steps=false&overview=",
+                 tolower(overview), exclude_str, sep="")
+  }  
+  tryCatch({
     # Sending the query
-    resRaw <- RCurl::getURL(utils::URLencode(req),
+    resRaw <- RCurl::getURL(url = utils::URLencode(req), 
                             useragent = "'osrm' R package")
     # Deal with \\u stuff
-    vres <- jsonlite::validate(resRaw)[1]
+    vres <- jsonlite::validate(txt = resRaw)[1]
     if(!vres){
       resRaw <- gsub(pattern = "[\\]", replacement = "zorglub", x = resRaw)
     }
+    
     # Parse the results
-    res <- jsonlite::fromJSON(resRaw)
+    res <- jsonlite::fromJSON(txt = resRaw)
     
     # Error handling
     if(is.null(res$code)){
-      e <- simpleError(res$message)
+      e <- simpleError(message = res$message)
       stop(e)
     }else{
       e <- simpleError(paste0(res$code,"\n",res$message))
@@ -106,8 +131,8 @@ osrmRoute <- function(src, dst, overview = "simplified", exclude = NULL,
     }
     
     if (overview == FALSE){
-      return(round(c(duration = res$routes$duration/60,
-                     distance = res$routes$distance/1000), 2))
+      return(round(c(duration = res$routes$duration / 60,
+                     distance = res$routes$distance / 1000), 2))
     }
     
     if(!vres){
@@ -122,15 +147,16 @@ osrmRoute <- function(src, dst, overview = "simplified", exclude = NULL,
     if (!missing(returnclass)){
       rcoords <- paste0(geodf$lon, ' ', geodf$lat, collapse = ", ")
       rgeom <- (st_as_sfc(paste0("LINESTRING(",rcoords,")")))
-      rosf <- st_sf(src = src[1], dst = dst[1],
-                    duration = res$routes$legs[[1]]$duration/60,
-                    distance = res$routes$legs[[1]]$distance/1000,
-                    geometry = rgeom, crs = 4326)
-      row.names(rosf) <- paste(src[1], dst[1],sep="_")
+      rosf <- st_sf(src = id1, dst = id2,
+                    duration = res$routes$duration / 60,
+                    distance = res$routes$distance / 1000,
+                    geometry = rgeom, crs = 4326, 
+                    row.names = paste(id1, id2, sep = "_"))
+      # prj
       if (!is.na(oprj)){
         rosf <- st_transform(rosf, oprj)
       }
-      names(rosf)[1:2] <- c("src", "dst")
+
       # output mgmnt
       if(returnclass=="sp"){
         rosf <- methods::as(rosf, "Spatial")
@@ -141,5 +167,4 @@ osrmRoute <- function(src, dst, overview = "simplified", exclude = NULL,
   }, error=function(e) {message("The OSRM server returned an error:\n", e)})
   return(NULL)
 }
-
 

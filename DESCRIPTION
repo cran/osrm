@@ -2,7 +2,7 @@ Package: osrm
 Type: Package
 Title: Interface Between R and the OpenStreetMap-Based Routing Service
         OSRM
-Version: 3.3.2
+Version: 3.3.3
 Authors@R: c(person("Timothée", "Giraud", email = "timothee.giraud@cnrs.fr", 
     role = c("cre","aut"),  comment = c(ORCID = "0000-0002-1932-3323")),
     person("Robin", "Cura", role = c("ctb")), 
@@ -13,19 +13,18 @@ Description: An interface between R and the OSRM API. OSRM is a routing
     kilometric distance) between points and travel time matrices.
 License: GPL-3
 LazyData: TRUE
-Imports: jsonlite, RCurl, utils, stats, lwgeom, isoband, methods,
-        gepaf, sp, sf
+Imports: jsonlite, RCurl, utils, stats, isoband, methods, gepaf, sp, sf
 Depends: R (>= 3.3.0)
-Suggests: cartography
+Suggests: cartography, lwgeom
 URL: https://github.com/rCarto/osrm
 BugReports: https://github.com/rCarto/osrm/issues
 Encoding: UTF-8
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 NeedsCompilation: no
-Packaged: 2019-09-30 09:42:50 UTC; tim
+Packaged: 2020-04-14 12:36:54 UTC; tim
 Author: Timothée Giraud [cre, aut] (<https://orcid.org/0000-0002-1932-3323>),
   Robin Cura [ctb],
   Matthieu Viry [ctb]
 Maintainer: Timothée Giraud <timothee.giraud@cnrs.fr>
 Repository: CRAN
-Date/Publication: 2019-09-30 10:10:02 UTC
+Date/Publication: 2020-04-14 13:20:02 UTC

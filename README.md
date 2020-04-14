@@ -17,13 +17,25 @@ You can run your own instance of OSRM following guidelines provided here:    [ht
 The simplest solution is probably the one based on [docker containers](https://github.com/Project-OSRM/osrm-backend#using-docker).    
 
 To set the OSRM server, use the `osrm.server` option: `options(osrm.server = "http://address.of.the.server/")`.     
-To set the profile ("driving" is set by default and it is the only profile available on the demo server), use the `osrm.profile` option: `options(osrm.profile = "name.of.the.profile")`.    
+To set the profile ("driving" is set by default and it is the only profile available on the demo server), use the `osrm.profile` option: `options(osrm.profile = "name.of.the.profile")`.  
+The "driving" profile is set by default and it is the only profile available on the demo server. Other possible profiles are "walk" and "bike".  
 A typical setup, corresponding to the Docker example, would be:  
 `options(osrm.server = "http://0.0.0.0:5000/", osrm.profile = "driving")`
 
 
 :warning: **You must be careful using the OSRM demo server**:    
 > ["The demo server usage is restricted to reasonable, non-commercial use-cases. We provide no guarantees wrt. uptime, latency, or data updates."](https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server)
+
+
+:heavy_exclamation_mark: **OSRM Demoserver - call for hosting volunteers**:  
+> ["This is a call to the community to see if someone else is willing to take 
+up the mantle for running the demo server.  If nobody steps up, then the service 
+will stop working on Mar 09, 2020.""](https://lists.openstreetmap.org/pipermail/osrm-talk/2020-January/001834.html)
+
+
+:heavy_exclamation_mark: **To consider when using OSRM**:    
+> ["Most of the previously active core devs have either moved on to new roles, or are simply busy on different projects (...)"](https://github.com/Project-OSRM/osrm-backend/issues/5463)
+
 
 
 

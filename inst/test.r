@@ -95,13 +95,12 @@ B <- osrmTable(loc = apotheke.sf[1:10, ],
                measure = c("distance", "duration"))
 all.equal(A$distance,B$distances)
 all.equal(A$durations,B$durations)
-sum(A$durations)
+
 
 #### osrmIsochrone
 iso <- osrmIsochrone(loc = c(13.43853,52.47728), breaks = seq(0,15,2), res = 30, 
                      returnclass = "sf")
 plot(iso)
-iso <- osrmIsochrone(loc = apotheke.sf[20,], breaks = seq(0,20,2), res = 50, 
+iso <- osrmIsochrone(loc = apotheke.sf[20,], breaks = seq(0,30,5), res = 50, 
                      returnclass = "sf")
 plot(iso$geometry)
-

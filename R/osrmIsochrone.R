@@ -9,12 +9,17 @@
 #' @param res number of points used to compute isochrones, one side of the square 
 #' grid, the total number of points will be res*res.  
 #' @param returnclass class of the returned polygons. Either "sp" of "sf".
+#' @param osrm.server the base URL of the routing server.
+#' getOption("osrm.server") by default.
+#' @param osrm.profile the routing profile to use, e.g. "car", "bike" or "foot"
+#' (when using the routing.openstreetmap.de test server).
+#' getOption("osrm.profile") by default.
 #' @return A SpatialPolygonsDateFrame or an sf MULTIPOLYGON of isochrones is returned. 
 #' The data frame of the output contains four fields: 
 #' id (id of each polygon), min and max (minimum and maximum breaks of the polygon), 
 #' center (central values of classes).
 #' @seealso \link{osrmTable}
-#' @importFrom sf st_as_sf st_crs st_transform st_convex_hull st_union st_intersects
+#' @importFrom sf st_as_sf st_crs st_transform st_convex_hull st_union st_intersects st_bbox
 #' @export
 #' @examples
 #' \dontrun{
@@ -50,7 +55,10 @@
 #' }
 #' }
 osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7), 
-                          exclude = NULL, res = 30, returnclass = "sp"){
+                          exclude = NULL, res = 30, returnclass = "sp",  
+                          osrm.server = getOption("osrm.server"),
+                          osrm.profile = getOption("osrm.profile")){
+  
   # imput mngmnt
   oprj <- NA
   if (methods::is(loc,"Spatial")){
@@ -69,13 +77,13 @@ osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7),
   # max distance mngmnt to see how far to extend the grid to get measures
   breaks <- unique(sort(breaks))
   tmax <- max(breaks)
-  if(options('osrm.profile')=="walk"){
+  if(osrm.profile %in% c("foot", "walk")){
     speed =  10 * 1000/60
   }
-  if(options('osrm.profile')=="bike"){
+  if(osrm.profile =="bike"){
     speed =  20 * 1000/60
   }
-  if(options('osrm.profile')=="driving"){
+  if(osrm.profile %in% c("driving","car")){
     speed =  130 * 1000/60
   }
   dmax <- tmax * speed
@@ -83,23 +91,31 @@ osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7),
   # create a grid to obtain measures
   sgrid <- rgrid(loc = loc, dmax = dmax, res = res)
   
-  # slice the grid to make several API calls  
-  lsgr <- nrow(sgrid)
-  f500 <- lsgr %/% 300
-  r500 <- lsgr %% 300
-  listDur <- list()
-  listDest <- list()
-  # gentle sleeptime for demo server
-  if(getOption("osrm.server") != "http://router.project-osrm.org/"){
+  # gentle sleeptime & param for demo server
+  if(osrm.server != "https://routing.openstreetmap.de/"){
     sleeptime <- 0
+    deco <- 300
   }else{
     sleeptime <- 1
+    deco <- 100
+    osrm.server = paste0(osrm.server, "routed-", osrm.profile, "/")
+    osrm.profile = "driving"
   }
+  
+
+  # slice the grid to make several API calls  
+  lsgr <- nrow(sgrid)
+  f500 <- lsgr %/% deco
+  r500 <- lsgr %% deco
+  listDur <- list()
+  listDest <- list()
+
   if(f500>0){
     for (i in 1:f500){
-      st <- (i-1) * 300 + 1
-      en <- i * 300
-      dmat <- osrmTable(src = loc, dst = sgrid[st:en,], exclude = exclude)
+      st <- (i-1) * deco + 1
+      en <- i * deco
+      dmat <- osrmTable(src = loc, dst = sgrid[st:en,], exclude = exclude, 
+                        osrm.server = osrm.server, osrm.profile = osrm.profile)
       durations <- dmat$durations
       listDur[[i]] <- dmat$durations
       listDest[[i]] <- dmat$destinations
@@ -107,17 +123,18 @@ osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7),
     }
     if(r500>0){
       dmat <- osrmTable(src = loc, dst = sgrid[(en+1):(en+r500),], 
-                        exclude = exclude)
+                        exclude = exclude, osrm.server = osrm.server, 
+                        osrm.profile = osrm.profile)
       listDur[[i+1]] <- dmat$durations
       listDest[[i+1]] <- dmat$destinations
     }
   }else{
-    dmat <- osrmTable(src = loc, dst = sgrid, exclude = exclude)
+    dmat <- osrmTable(src = loc, dst = sgrid, exclude = exclude,
+                      osrm.server = osrm.server, osrm.profile = osrm.profile)
     listDur[[1]] <- dmat$durations
     listDest[[1]] <- dmat$destinations
   }
   durations <- do.call(c, listDur)
-  
   # mgmnt of edge cases of points out of reach
   ########### QUICK FIX ######################
   destinations <- do.call(rbind, listDest)
@@ -125,7 +142,7 @@ osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7),
   rpt <- st_transform(rpt, st_crs(loc))
   rpt$durations <- durations
   b <- as.numeric(st_distance(sgrid[1,], sgrid[2,]) / 2)
-  xx <- st_make_grid(x = st_buffer(st_union(sgrid), b), n = c(res, res))
+  xx <- st_make_grid(x = st_buffer(st_as_sfc(st_bbox(sgrid)), b), n = c(res, res))
   inter <- st_intersects(xx, rpt)
   sgrid$durations <- unlist(lapply(inter, function(x)mean(rpt[["durations"]][x], na.rm=TRUE)))
   sgrid[is.nan(sgrid$durations), "durations"] <- tmax + 1
@@ -135,10 +152,8 @@ osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7),
     stop(e, call. = FALSE)
   }
   ########### END OF QUICK FIX ################
-  
   # computes isopolygones
   iso <- isopoly(x = sgrid, breaks = breaks, var = "durations")
-  
   # proj mgmnt
   if (!is.na(oprj)){
     iso <- st_transform(x = iso, oprj)
@@ -165,6 +180,11 @@ osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7),
 #' @param res number of points used to compute isochrones, one side of the square 
 #' grid, the total number of points will be res*res.  
 #' @param returnclass class of the returned polygons. Either "sp" of "sf".
+#' @param osrm.server the base URL of the routing server.
+#' getOption("osrm.server") by default.
+#' @param osrm.profile the routing profile to use, e.g. "car", "bike" or "foot"
+#' (when using the routing.openstreetmap.de test server).
+#' getOption("osrm.profile") by default.
 #' @return A SpatialPolygonsDateFrame or an sf MULTIPOLYGON of isochrones is returned. 
 #' The data frame of the output contains four fields: 
 #' id (id of each polygon), min and max (minimum and maximum breaks of the polygon), 
@@ -182,7 +202,9 @@ osrmIsochrone <- function(loc, breaks = seq(from = 0,to = 60, length.out = 7),
 #' plot(st_geometry(iso))
 #' }
 osrmIsometric <- function(loc, breaks = seq(from = 0, to = 10000, length.out = 4), 
-                          exclude = NULL, res = 30, returnclass = "sp"){
+                          exclude = NULL, res = 30, returnclass = "sp", 
+                          osrm.server = getOption("osrm.server"),
+                          osrm.profile = getOption("osrm.profile")){
   # imput mngmnt
   oprj <- NA
   if (methods::is(loc,"Spatial")){
@@ -201,13 +223,13 @@ osrmIsometric <- function(loc, breaks = seq(from = 0, to = 10000, length.out = 4
   # max distance mngmnt to see how far to extend the grid to get measures
   breaks <- unique(sort(breaks))
   tmax <- max(breaks)
-  if(options('osrm.profile')=="walk"){
+  if(osrm.profile %in% c("foot", "walk")){
     speed =  10 * 1000/60
   }
-  if(options('osrm.profile')=="bike"){
+  if(osrm.profile =="bike"){
     speed =  20 * 1000/60
   }
-  if(options('osrm.profile')=="driving"){
+  if(osrm.profile %in% c("driving","car")){
     speed =  100 * 1000/60
   }
   # 2.2 seems to be a reasonable multiplier to max distance given
@@ -218,21 +240,25 @@ osrmIsometric <- function(loc, breaks = seq(from = 0, to = 10000, length.out = 4
   
   # slice the grid to make several API calls  
   lsgr <- nrow(sgrid)
-  f500 <- lsgr %/% 300
-  r500 <- lsgr %% 300
+  f500 <- lsgr %/% 150
+  r500 <- lsgr %% 150
   listDur <- list()
   listDest <- list()
   # gentle sleeptime for demo server
-  if(getOption("osrm.server") != "http://router.project-osrm.org/"){
+  if(osrm.server != "https://routing.openstreetmap.de/"){
     sleeptime <- 0
   }else{
     sleeptime <- 1
+    osrm.server = paste0(osrm.server, "routed-", osrm.profile, "/")
+    osrm.profile = "driving"
   }
   if(f500>0){
     for (i in 1:f500){
-      st <- (i-1) * 300 + 1
-      en <- i * 300
-      dmat <- osrmTable(src = loc, dst = sgrid[st:en,], exclude = exclude, measure = "distance")
+      st <- (i-1) * 150 + 1
+      en <- i * 150
+      dmat <- osrmTable(src = loc, dst = sgrid[st:en,], exclude = exclude,
+                        measure = "distance", 
+                        osrm.server = osrm.server, osrm.profile = osrm.profile)
       distances <- dmat$distances
       listDur[[i]] <- dmat$distances
       listDest[[i]] <- dmat$destinations
@@ -240,12 +266,15 @@ osrmIsometric <- function(loc, breaks = seq(from = 0, to = 10000, length.out = 4
     }
     if(r500>0){
       dmat <- osrmTable(src = loc, dst = sgrid[(en+1):(en+r500),], 
-                        exclude = exclude, measure = "distance")
+                        exclude = exclude, measure = "distance" ,
+                        osrm.server = osrm.server, osrm.profile = osrm.profile)
       listDur[[i+1]] <- dmat$distances
       listDest[[i+1]] <- dmat$destinations
     }
   }else{
-    dmat <- osrmTable(src = loc, dst = sgrid, exclude = exclude, measure = "distance")
+    dmat <- osrmTable(src = loc, dst = sgrid, exclude = exclude, 
+                      measure = "distance" ,
+                      osrm.server = osrm.server, osrm.profile = osrm.profile)
     listDur[[1]] <- dmat$distances
     listDest[[1]] <- dmat$destinations
   }
@@ -258,7 +287,7 @@ osrmIsometric <- function(loc, breaks = seq(from = 0, to = 10000, length.out = 4
   rpt <- st_transform(rpt, st_crs(loc))
   rpt$distances <- distances
   b <- as.numeric(st_distance(sgrid[1,], sgrid[2,]) / 2)
-  xx <- st_make_grid(x = st_buffer(st_union(sgrid), b), n = c(res, res))
+  xx <- st_make_grid(x = st_buffer(st_as_sfc(st_bbox(sgrid)), b), n = c(res, res))
   inter <- st_intersects(xx, rpt)
   sgrid$distances <- unlist(lapply(inter, function(x)mean(rpt[["distances"]][x], na.rm=TRUE)))
   sgrid[is.na(sgrid$distances), "distances"] <- tmax + 1

@@ -1,35 +1,33 @@
-home <- length(unclass(packageVersion("osrm"))[[1]]) == 4
-localtest <- F
-
 if(home){
   suppressPackageStartupMessages(library(sf))
-  data("berlin")
+  apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
+                         quiet = TRUE)
   ss <- function(){Sys.sleep(1)}
   
   ######################## DEMO car ###########################
   options(osrm.server = "https://routing.openstreetmap.de/", osrm.profile = "car")
   ss()
-  trips <- osrmTrip(loc = apotheke.sf, returnclass = "sf")
+  trips <- osrmTrip(loc = apotheke.sf[1:5,], returnclass = "sf")
   expect_true(methods::is(trips[[1]]$trip, "sf"))
   
   
   ################# DEMO BIKE #####################
   options(osrm.server = "https://routing.openstreetmap.de/", osrm.profile = "bike")
   ss()
-  trips <- osrmTrip(loc = apotheke.sf, returnclass = "sf")
+  trips <- osrmTrip(loc = apotheke.sf[1:5,], returnclass = "sf")
   expect_true(methods::is(trips[[1]]$trip, "sf"))
   
   
   ############## DEMO FOOT #################"""""
   options(osrm.server = "https://routing.openstreetmap.de/", osrm.profile = "foot")
   ss()
-  trips <- osrmTrip(loc = apotheke.sf, returnclass = "sf")
+  trips <- osrmTrip(loc = apotheke.sf[1:5,], returnclass = "sf")
   expect_true(methods::is(trips[[1]]$trip, "sf"))
   
   
   ############# fun param ##################""
   ss()
-  trips <- osrmTrip(loc = apotheke.sf, returnclass = "sf",
+  trips <- osrmTrip(loc = apotheke.sf[1:5,], returnclass = "sf",
                     osrm.server = "http://router.project-osrm.org/", 
                     osrm.profile = "driving")
   expect_true(methods::is(trips[[1]]$trip, "sf"))

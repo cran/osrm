@@ -1,9 +1,7 @@
-home <- length(unclass(packageVersion("osrm"))[[1]]) == 4
-localtest <- F
-
 if(home){
   suppressPackageStartupMessages(library(sf))
-  data("berlin")
+  apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
+                         quiet = TRUE)
   ss <- function(){Sys.sleep(1)}
   
   ######################## DEMO car ###########################
@@ -16,7 +14,7 @@ if(home){
   iso2 <- osrmIsochrone(loc = apotheke.sf[10,], returnclass="sf",
                         breaks = seq(from = 0, to = 16, by = 2))
   expect_true(methods::is(iso2, "sf"))
-  iso3 <- osrmIsometric(loc = c(13.43,52.47), returnclass="sf")
+  iso3 <- osrmIsometric(loc = c(13.43,52.47), returnclass="sf", res = 4)
   expect_true(methods::is(iso3, "sf"))
   
   

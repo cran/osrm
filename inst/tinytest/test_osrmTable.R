@@ -1,9 +1,9 @@
-home <- length(unclass(packageVersion("osrm"))[[1]]) == 4
-localtest <- F
-
 if(home){
   suppressPackageStartupMessages(library(sf))
-  data("berlin")
+  apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
+                         quiet = TRUE)
+  apotheke.df <- read.csv(system.file("csv/apotheke.csv", package = "osrm"))
+  
   ss <- function(){Sys.sleep(1)}
   
   ######################## DEMO car ###########################
@@ -17,24 +17,6 @@ if(home){
                  measure = c("distance", "duration"))
   expect_equal(A$distances,B$distances)
   expect_equal(dim(A$distances), c(10,10))
-  ss()
-  A <- osrmTable(src = apotheke.df[1:10,c("id","lon","lat")],
-                 dst = apotheke.df[1:10,c("id","lon","lat")], 
-                 measure = c("distance"), exclude = "motorway")
-  ss()
-  B <- osrmTable(loc = apotheke.df[1:10, c("id","lon","lat")], 
-                 exclude = "motorway", measure = "distance")
-  expect_equal(A$distances,B$distances)
-  expect_equal(dim(A$distances), c(10,10))
-  ss()
-  A <- osrmTable(src = apotheke.df[1:10,c("id","lon","lat")],
-                 dst = apotheke.df[1:10,c("id","lon","lat")], 
-                 measure = c("duration"), exclude = "motorway")
-  ss()
-  B <- osrmTable(loc = apotheke.df[1:10, c("id","lon","lat")], 
-                 exclude = "motorway", measure = "duration")
-  expect_equal(A$durations,B$durations)
-  expect_equal(dim(A$durations), c(10,10))
   ss()
   A <- osrmTable(src = apotheke.sf[1:10, ],
                  dst = apotheke.sf[1:10, ], 
@@ -148,5 +130,19 @@ if(home){
     expect_equal(A$durations,B$durations)
     expect_equal(dim(A$durations), c(10,10))
     expect_equal(dim(A$distances), c(10,10))
+    A <- osrmTable(src = apotheke.df[1:10,c("id","lon","lat")],
+                   dst = apotheke.df[1:10,c("id","lon","lat")], 
+                   measure = c("distance"), exclude = "motorway")
+    B <- osrmTable(loc = apotheke.df[1:10, c("id","lon","lat")], 
+                   measure = c("distance"), exclude = "motorway")
+    expect_equal(A$distances,B$distances)
+    expect_equal(dim(A$distances), c(10,10))
+    A <- osrmTable(src = apotheke.df[1:10,c("id","lon","lat")],
+                   dst = apotheke.df[1:10,c("id","lon","lat")], 
+                   measure = c("duration"), exclude = "motorway")
+    B <- osrmTable(loc = apotheke.df[1:10, c("id","lon","lat")], 
+                   exclude = "motorway", measure = "duration")
+    expect_equal(A$durations,B$durations)
+    expect_equal(dim(A$durations), c(10,10))
   }
 }

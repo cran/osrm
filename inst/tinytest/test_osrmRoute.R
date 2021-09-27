@@ -1,9 +1,9 @@
-home <- length(unclass(packageVersion("osrm"))[[1]]) == 4
-localtest <- F
-
 if(home){
   suppressPackageStartupMessages(library(sf))
-  data("berlin")
+  apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
+                         quiet = TRUE)
+  apotheke.df <- read.csv(system.file("csv/apotheke.csv", package = "osrm"))
+  
   ss <- function(){Sys.sleep(1)}
   
   ######################## DEMO car ###########################
@@ -14,11 +14,7 @@ if(home){
                  returnclass="sf")
   expect_true(methods::is(r, "sf"))
   ss()
-  # Travel path between points excluding motorways
-  r <- osrmRoute(src = apotheke.sf[1, ], dst = apotheke.df[16, ], 
-                 returnclass="sf", exclude = "motorway")
-  expect_true(methods::is(r, "sf"))
-  ss()
+
   # Return only duration and distance
   r <- osrmRoute(src = apotheke.sf[1, ], dst = apotheke.df[16, ], 
                  overview = FALSE)
@@ -144,5 +140,6 @@ if(home){
       class = "data.frame", row.names = c(NA, -10L))
     r <- osrmRoute(loc = pts, returnclass = "sf")
     expect_true(methods::is(r, "sf"))
+
   }
 }

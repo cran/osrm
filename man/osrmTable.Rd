@@ -5,80 +5,91 @@
 \title{Get Travel Time Matrices Between Points}
 \usage{
 osrmTable(
+  src,
+  dst = src,
   loc,
-  src = NULL,
-  dst = NULL,
-  exclude = NULL,
-  gepaf = FALSE,
+  exclude,
   measure = "duration",
   osrm.server = getOption("osrm.server"),
   osrm.profile = getOption("osrm.profile")
 )
 }
 \arguments{
-\item{loc}{a data frame containing 3 fields: points identifiers, longitudes 
-and latitudes (WGS84). It can also be an sf object. If so, row names are used 
-as identifiers.
-If loc parameter is used, all pair-wise distances are computed.}
+\item{src}{origin points. 
+\code{src} can be: \itemize{
+  \item a data.frame of longitudes and latitudes (WGS 84),
+  \item a matrix of longitudes and latitudes (WGS 84),
+  \item an sfc object of type POINT,
+  \item an sf object of type POINT.
+}
+If relevant, row names are used as identifiers.}
 
-\item{src}{a data frame containing origin points identifiers, longitudes 
-and latitudes (WGS84). It can also be an sf object. If so, row names are used
-as identifiers. 
-If dst and src parameters are used, only pairs between scr/dst are computed.}
+\item{dst}{destination. 
+\code{dst} can be: \itemize{
+  \item a data.frame of longitudes and latitudes (WGS 84),
+  \item a matrix of longitudes and latitudes (WGS 84),
+  \item an sfc object of type POINT,
+  \item an sf object of type POINT.
+}
+If relevant, row names are used as identifiers.}
 
-\item{dst}{a data frame containing destination points identifiers, longitudes 
-and latitudes (WGS84). It can also be an sf object. If so, row names are used 
-as identifiers.}
+\item{loc}{points. \code{loc} can be: \itemize{
+  \item a data.frame of longitudes and latitudes (WGS 84),
+  \item a matrix of longitudes and latitudes (WGS 84),
+  \item an sfc object of type POINT,
+  \item an sf object of type POINT.
+}
+If relevant, row names are used as identifiers.}
 
-\item{exclude}{pass an optional "exclude" request option to the OSRM API.}
-
-\item{gepaf}{a boolean indicating if coordinates are sent encoded with the
-google encoded algorithm format (TRUE) or not (FALSE). Must be FALSE if using
-the public OSRM API.}
+\item{exclude}{pass an optional "exclude" request option to the OSRM API
+(not allowed with the OSRM demo server).}
 
 \item{measure}{a character indicating what measures are calculated. It can 
 be "duration" (in minutes), "distance" (meters), or both c('duration',
-'distance'). The demo server only allows "duration".}
+'distance').}
 
-\item{osrm.server}{the base URL of the routing server.
-getOption("osrm.server") by default.}
+\item{osrm.server}{the base URL of the routing server.}
 
-\item{osrm.profile}{the routing profile to use, e.g. "car", "bike" or "foot"
-(when using the routing.openstreetmap.de test server).
-getOption("osrm.profile") by default.}
+\item{osrm.profile}{the routing profile to use, e.g. "car", "bike" or "foot".}
 }
 \value{
-A list containing 3 data frames is returned. 
-durations is the matrix of travel times (in minutes), 
-sources and destinations are the coordinates of 
-the origin and destination points actually used to compute the travel 
-times (WGS84).
+The output of this function is a list composed of one or two matrices 
+and 2 data.frames 
+\itemize{
+  \item{durations}: a matrix of travel times (in minutes)
+  \item{distances}: a matrix of distances (in meters)
+  \item{sources}: a data.frame of the coordinates of the points actually
+  used as starting points (EPSG:4326 - WGS84)
+  \item{sources}: a data.frame of the coordinates of the points actually
+  used as destinations (EPSG:4326 - WGS84)
+  }
 }
 \description{
 Build and send OSRM API queries to get travel time matrices 
-between points. This function interfaces the \emph{table} OSRM service.
-}
-\details{
-If loc, src or dst are data frames we assume that the 3 first 
-columns of the data.frame are: identifiers, longitudes and latitudes.
+between points. This function interfaces the \emph{table} OSRM service.\cr 
+Use \code{src} and \code{dst} to set different origins and destinations.\cr
+Use \code{loc} to compute travel times or travel distances between all 
+points.
 }
 \note{
-If you want to get a large number of distances make sure to set the 
-"max-table-size" argument (Max. locations supported in table) of the OSRM 
-server accordingly.
+The OSRM demo server does not allow large queries (more than 10000 distances 
+or durations).\cr
+If you use your own server and if you want to get a large number of distances
+make sure to set the "max-table-size" option (Max. locations supported in 
+table) of the OSRM server accordingly.
 }
 \examples{
 \dontrun{
 # Inputs are data frames
 apotheke.df <- read.csv(system.file("csv/apotheke.csv", package = "osrm"))
 # Travel time matrix
-distA <- osrmTable(loc = apotheke.df[1:50, c("id","lon","lat")])
+distA <- osrmTable(loc = apotheke.df[1:50, c("lon","lat")])
 # First 5 rows and columns
 distA$durations[1:5,1:5]
 
 # Travel time matrix with different sets of origins and destinations
-distA2 <- osrmTable(src = apotheke.df[1:10,c("id","lon","lat")],
-                    dst = apotheke.df[11:20,c("id","lon","lat")])
+distA2 <- osrmTable(src = apotheke.df[1:10,c("lon","lat")],
+                    dst = apotheke.df[11:20,c("lon","lat")])
 # First 5 rows and columns
 distA2$durations[1:5,1:5]
 
@@ -94,8 +105,11 @@ distA3$durations[1:5,1:5]
 distA4 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,])
 # First 5 rows and columns
 distA4$durations[1:5,1:5]
+
+# Road distance matrix with different sets of origins and destinations
+distA5 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,], 
+                    measure = "distance")
+# First 5 rows and columns
+distA5$distances[1:5,1:5]
 }
-}
-\seealso{
-\link{osrmIsochrone}
 }

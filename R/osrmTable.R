@@ -1,11 +1,11 @@
 #' @name osrmTable
 #' @title Get Travel Time Matrices Between Points
-#' @description Build and send OSRM API queries to get travel time matrices 
-#' between points. This function interfaces the \emph{table} OSRM service.\cr 
+#' @description Build and send OSRM API queries to get travel time matrices
+#' between points. This function interfaces the \emph{table} OSRM service.\cr
 #' Use \code{src} and \code{dst} to set different origins and destinations.\cr
-#' Use \code{loc} to compute travel times or travel distances between all 
-#' points. 
-#' @param src origin points. 
+#' Use \code{loc} to compute travel times or travel distances between all
+#' points.
+#' @param src origin points.
 #' \code{src} can be: \itemize{
 #'   \item a data.frame of longitudes and latitudes (WGS 84),
 #'   \item a matrix of longitudes and latitudes (WGS 84),
@@ -13,7 +13,7 @@
 #'   \item an sf object of type POINT.
 #'}
 #' If relevant, row names are used as identifiers.
-#' @param dst destination. 
+#' @param dst destination.
 #' \code{dst} can be: \itemize{
 #'   \item a data.frame of longitudes and latitudes (WGS 84),
 #'   \item a matrix of longitudes and latitudes (WGS 84),
@@ -28,16 +28,17 @@
 #'   \item an sf object of type POINT.
 #'}
 #' If relevant, row names are used as identifiers.
-#' @param measure a character indicating what measures are calculated. It can 
+#' @param measure a character indicating what measures are calculated. It can
 #' be "duration" (in minutes), "distance" (meters), or both c('duration',
-#' 'distance').  
+#' 'distance').
 #' @param exclude pass an optional "exclude" request option to the OSRM API
 #' (not allowed with the OSRM demo server).
+#' @param id_col a character indicating the identifer column that will be used to return the results. Defaults to row names.
 #' @param osrm.server the base URL of the routing server.
 #' @param osrm.profile the routing profile to use, e.g. "car", "bike" or "foot".
 #' @return
-#' The output of this function is a list composed of one or two matrices 
-#' and 2 data.frames 
+#' The output of this function is a list composed of one or two matrices
+#' and 2 data.frames
 #' \itemize{
 #'   \item{durations}: a matrix of travel times (in minutes)
 #'   \item{distances}: a matrix of distances (in meters)
@@ -46,11 +47,11 @@
 #'   \item{sources}: a data.frame of the coordinates of the points actually
 #'   used as destinations (EPSG:4326 - WGS84)
 #'   }
-#' @note 
-#' The OSRM demo server does not allow large queries (more than 10000 distances 
+#' @note
+#' The OSRM demo server does not allow large queries (more than 10000 distances
 #' or durations).\cr
 #' If you use your own server and if you want to get a large number of distances
-#' make sure to set the "max-table-size" option (Max. locations supported in 
+#' make sure to set the "max-table-size" option (Max. locations supported in
 #' table) of the OSRM server accordingly.
 #' @examples
 #' \dontrun{
@@ -60,72 +61,77 @@
 #' distA <- osrmTable(loc = apotheke.df[1:50, c("lon","lat")])
 #' # First 5 rows and columns
 #' distA$durations[1:5,1:5]
-#' 
+#'
 #' # Travel time matrix with different sets of origins and destinations
 #' distA2 <- osrmTable(src = apotheke.df[1:10,c("lon","lat")],
 #'                     dst = apotheke.df[11:20,c("lon","lat")])
 #' # First 5 rows and columns
 #' distA2$durations[1:5,1:5]
-#' 
+#'
 #' # Inputs are sf points
 #' library(sf)
-#' apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"), 
+#' apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
 #'                        quiet = TRUE)
 #' distA3 <- osrmTable(loc = apotheke.sf[1:10,])
 #' # First 5 rows and columns
 #' distA3$durations[1:5,1:5]
-#' 
+#'
 #' # Travel time matrix with different sets of origins and destinations
 #' distA4 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,])
 #' # First 5 rows and columns
 #' distA4$durations[1:5,1:5]
-#' 
+#'
 #' # Road distance matrix with different sets of origins and destinations
-#' distA5 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,], 
+#' distA5 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,],
 #'                     measure = "distance")
 #' # First 5 rows and columns
 #' distA5$distances[1:5,1:5]
 #' }
 #' @export
-osrmTable <- function(src, 
-                      dst = src, 
-                      loc, 
-                      exclude, 
-                      measure = "duration", 
+osrmTable <- function(src,
+                      dst = src,
+                      loc,
+                      exclude,
+                      id_col,
+                      measure = "duration",
                       osrm.server = getOption("osrm.server"),
                       osrm.profile = getOption("osrm.profile")){
-  
+
   opt <- options(error = NULL)
   on.exit(options(opt), add=TRUE)
-  
+
   url <- base_url(osrm.server, osrm.profile, "table")
-  
+
+  if(missing(id_col)) {
+
+  }
+
   # input management
   if(!missing(loc)){
-    loc <- input_table(x = loc, id = 'loc')
+    loc <- input_table(x = loc, id = 'loc', id_col = id_col)
     dst_r <- src_r <- loc
     url <- paste0(url, encode_coords(x = loc), "?")
   }else{
-    src_r <- input_table(x = src, id = 'src')
-    dst_r <- input_table(x = dst, id = 'dst')
+    src_r <- input_table(x = src, id = 'src', id_col = id_col)
+    dst_r <- input_table(x = dst, id = 'dst', id_col = id_col)
     loc <- rbind(src_r, dst_r)
-    url <- paste0(url, 
-                  encode_coords(x = loc), 
-                  paste0("?sources=", 
-                         paste(0:(nrow(src_r)-1), collapse = ";"), 
-                         "&destinations=", 
+    url <- paste0(url,
+                  encode_coords(x = loc),
+                  paste0("?sources=",
+                         paste(0:(nrow(src_r)-1), collapse = ";"),
+                         "&destinations=",
                          paste(nrow(src_r):(nrow(loc)-1), collapse = ";")),
                   "&")
   }
-  
+
   # adding exclude parameter
   if (!missing(exclude)) {
     url <- paste0(url, "exclude=", exclude, "&")
   }
   # adding measure parameter
-  url <- paste0(url, 
-                "annotations=", 
-                paste0(measure, collapse=','), 
+  url <- paste0(url,
+                "annotations=",
+                paste0(measure, collapse=','),
                 "&generate_hints=false")
   # print(url)
   e <- try({
@@ -136,27 +142,27 @@ osrmTable <- function(src,
   if (inherits(e,"try-error")){
     stop(e, call. = FALSE)
   }
-  
+
   # test result validity
   test_http_error(r)
-  
+
   res <- RcppSimdJson::fparse(rawToChar(r$content))
-  
+
   # create dummy dataset for tests
   # return(list(res = res, src = src_r, dst = dst_r))
-  
+
   # format results
   output <- list()
   if(!is.null(res$durations)){
-    output$durations <- tab_format(res = res, 
-                                   src = src_r, 
-                                   dst = dst_r, 
+    output$durations <- tab_format(res = res,
+                                   src = src_r,
+                                   dst = dst_r,
                                    type = "duration")
   }
   if(!is.null(res$distances)){
-    output$distances <- tab_format(res = res, 
-                                   src = src_r, 
-                                   dst = dst_r, 
+    output$distances <- tab_format(res = res,
+                                   src = src_r,
+                                   dst = dst_r,
                                    type = "distance")
   }
   # get the coordinates

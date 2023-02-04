@@ -9,13 +9,14 @@ osrmTable(
   dst = src,
   loc,
   exclude,
+  id_col,
   measure = "duration",
   osrm.server = getOption("osrm.server"),
   osrm.profile = getOption("osrm.profile")
 )
 }
 \arguments{
-\item{src}{origin points. 
+\item{src}{origin points.
 \code{src} can be: \itemize{
   \item a data.frame of longitudes and latitudes (WGS 84),
   \item a matrix of longitudes and latitudes (WGS 84),
@@ -24,7 +25,7 @@ osrmTable(
 }
 If relevant, row names are used as identifiers.}
 
-\item{dst}{destination. 
+\item{dst}{destination.
 \code{dst} can be: \itemize{
   \item a data.frame of longitudes and latitudes (WGS 84),
   \item a matrix of longitudes and latitudes (WGS 84),
@@ -46,7 +47,7 @@ If relevant, row names are used as identifiers.}
 
 \item{id_col}{a character indicating the identifer column that will be used to return the results. Defaults to row names.}
 
-\item{measure}{a character indicating what measures are calculated. It can 
+\item{measure}{a character indicating what measures are calculated. It can
 be "duration" (in minutes), "distance" (meters), or both c('duration',
 'distance').}
 
@@ -55,8 +56,8 @@ be "duration" (in minutes), "distance" (meters), or both c('duration',
 \item{osrm.profile}{the routing profile to use, e.g. "car", "bike" or "foot".}
 }
 \value{
-The output of this function is a list composed of one or two matrices 
-and 2 data.frames 
+The output of this function is a list composed of one or two matrices
+and 2 data.frames
 \itemize{
   \item{durations}: a matrix of travel times (in minutes)
   \item{distances}: a matrix of distances (in meters)
@@ -67,17 +68,17 @@ and 2 data.frames
   }
 }
 \description{
-Build and send OSRM API queries to get travel time matrices 
-between points. This function interfaces the \emph{table} OSRM service.\cr 
+Build and send OSRM API queries to get travel time matrices
+between points. This function interfaces the \emph{table} OSRM service.\cr
 Use \code{src} and \code{dst} to set different origins and destinations.\cr
-Use \code{loc} to compute travel times or travel distances between all 
+Use \code{loc} to compute travel times or travel distances between all
 points.
 }
 \note{
-The OSRM demo server does not allow large queries (more than 10000 distances 
+The OSRM demo server does not allow large queries (more than 10000 distances
 or durations).\cr
 If you use your own server and if you want to get a large number of distances
-make sure to set the "max-table-size" option (Max. locations supported in 
+make sure to set the "max-table-size" option (Max. locations supported in
 table) of the OSRM server accordingly.
 }
 \examples{
@@ -97,7 +98,7 @@ distA2$durations[1:5,1:5]
 
 # Inputs are sf points
 library(sf)
-apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"), 
+apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
                        quiet = TRUE)
 distA3 <- osrmTable(loc = apotheke.sf[1:10,])
 # First 5 rows and columns
@@ -109,7 +110,7 @@ distA4 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,])
 distA4$durations[1:5,1:5]
 
 # Road distance matrix with different sets of origins and destinations
-distA5 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,], 
+distA5 <- osrmTable(src = apotheke.sf[1:10,], dst = apotheke.sf[11:20,],
                     measure = "distance")
 # First 5 rows and columns
 distA5$distances[1:5,1:5]

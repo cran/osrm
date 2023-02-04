@@ -21,7 +21,7 @@ Suggests: mapsf, tinytest, covr
 URL: https://github.com/riatelab/osrm
 BugReports: https://github.com/riatelab/osrm/issues
 Encoding: UTF-8
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 NeedsCompilation: no
 Packaged: 2022-10-20 09:37:45 UTC; tim
 Author: Timothée Giraud [cre, aut] (<https://orcid.org/0000-0002-1932-3323>),

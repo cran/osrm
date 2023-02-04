@@ -44,8 +44,6 @@ If relevant, row names are used as identifiers.}
 \item{exclude}{pass an optional "exclude" request option to the OSRM API
 (not allowed with the OSRM demo server).}
 
-\item{id_col}{a character indicating the identifer column that will be used to return the results. Defaults to row names.}
-
 \item{measure}{a character indicating what measures are calculated. It can 
 be "duration" (in minutes), "distance" (meters), or both c('duration',
 'distance').}

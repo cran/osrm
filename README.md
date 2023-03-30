@@ -9,6 +9,7 @@ status](https://github.com/riatelab/osrm/actions/workflows/check-standard.yaml/b
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.04574/status.svg)](https://doi.org/10.21105/joss.04574)
 
 ***Interface Between R and the OpenStreetMap-Based Routing Service
 [OSRM](http://project-osrm.org/)***
@@ -32,18 +33,21 @@ containers](https://github.com/Project-OSRM/osrm-backend#using-docker).
 
 :warning: **You must be careful using the OSRM demo server and read the
 [*about* page](https://routing.openstreetmap.de/about.html) of the
-service**:  
-\> [One request per second max. No scraping, no heavy
-usage.](https://routing.openstreetmap.de/about.html)
+service**:
+
+> [One request per second max. No scraping, no heavy
+> usage.](https://routing.openstreetmap.de/about.html)
 
 ## Features
 
--   `osrmTable()` uses the *table* service to query time/distance
-    matrices,
--   `osrmRoute()` uses the *route* service to query routes,
--   `osrmTrip()` uses the *trip* service to query trips,
--   `osrmIsochone()` and `osrmIsometric()` use multiple `osrmTable()`
-    calls to create isochrones or isometric polygons.
+- `osrmTable()` uses the *table* service to query time/distance
+  matrices,
+- `osrmRoute()` uses the *route* service to query routes,
+- `osrmTrip()` uses the *trip* service to query trips,
+- `osrmNearest()` uses the *nearest* service to query the nearest point
+  on the street network,
+- `osrmIsochrone()` and `osrmIsodistance()` use multiple `osrmTable()`
+  calls to create isochrones or isodistances polygons.
 
 ## Demo
 
@@ -53,9 +57,9 @@ pharmacies in Berlin ([© OpenStreetMap
 contributors](https://www.openstreetmap.org/copyright/en)) stored in a
 [geopackage](https://www.geopackage.org/) file.
 
--   `osrmTable()` gives access to the *table* OSRM service. In this
-    example we use this function to get the median time needed to access
-    any pharmacy from any other pharmacy.
+- `osrmTable()` gives access to the *table* OSRM service. In this
+  example we use this function to get the median time needed to access
+  any pharmacy from any other pharmacy.
 
 ``` r
 library(osrm)
@@ -95,9 +99,9 @@ median(travel_time$durations, na.rm = TRUE)
 The median time needed to access any pharmacy from any other pharmacy is
 21.4 minutes.
 
--   `osrmRoute()` is used to compute the shortest route between two
-    points. Here we compute the shortest route between the two first
-    pharmacies.
+- `osrmRoute()` is used to compute the shortest route between two
+  points. Here we compute the shortest route between the two first
+  pharmacies.
 
 ``` r
 (route <- osrmRoute(src = pharmacy[1, ], dst = pharmacy[2, ]))
@@ -121,10 +125,10 @@ plot(st_geometry(pharmacy[1:2,]), pch = 20, add = T, cex = 1.5)
 
 ![](route.png)
 
--   `osrmTrip()` can be used to resolve the travelling salesman problem,
-    it gives the shortest trip between a set of unordered points. In
-    this example we want to obtain the shortest trip between the first
-    five pharmacies.
+- `osrmTrip()` can be used to resolve the travelling salesman problem,
+  it gives the shortest trip between a set of unordered points. In this
+  example we want to obtain the shortest trip between the first five
+  pharmacies.
 
 ``` r
 (trips <- osrmTrip(loc = pharmacy[1:5, ], overview = "full"))
@@ -167,10 +171,31 @@ text(st_coordinates(pharmacy[1:5,]), labels = row.names(pharmacy[1:5,]),
 
 ![](trip.png)
 
--   `osrmIsochrone()` computes areas that are reachable within a given
-    time span from a point and returns the reachable regions as
-    polygons. Here we compute the isochrones from a specific point
-    defined by its longitude and latitude.
+- `osrmNearest()` gives access to the *nearest* OSRM service. It returns
+  the nearest point on the street network from any point. Here we will
+  get the nearest point on the network from a couple of coordinates.
+
+``` r
+pt_not_on_street_network <- c(13.40, 52.47)
+(pt_on_street_network <- osrmNearest(loc = pt_not_on_street_network))
+```
+
+    ## Simple feature collection with 1 feature and 2 fields
+    ## Geometry type: POINT
+    ## Dimension:     XY
+    ## Bounding box:  xmin: 13.39671 ymin: 52.46661 xmax: 13.39671 ymax: 52.46661
+    ## Geodetic CRS:  WGS 84
+    ##      id distance                  geometry
+    ## loc loc      439 POINT (13.39671 52.46661)
+
+The distance from the input point to the nearest point on the street
+network is of 439 meters
+
+- `osrmIsochrone()` computes areas that are reachable within a given
+  time span from a point and returns the reachable regions as polygons.
+  These areas of equal travel time are called isochrones. Here we
+  compute the isochrones from a specific point defined by its longitude
+  and latitude.
 
 ``` r
 (iso <- osrmIsochrone(loc = c(13.43,52.47), breaks = seq(0,12,2)))
@@ -200,13 +225,13 @@ points(x = 13.43, y = 52.47, pch = 4, lwd = 2, cex = 1.5)
 
 ## Installation
 
--   Development version on GitHub
+- Development version on GitHub
 
 ``` r
 remotes::install_github("riatelab/osrm")
 ```
 
--   Stable version on [CRAN](https://CRAN.R-project.org/package=osrm/)
+- Stable version on [CRAN](https://CRAN.R-project.org/package=osrm/)
 
 ``` r
 install.packages("osrm")
@@ -219,3 +244,10 @@ requests](https://github.com/riatelab/osrm/pulls) and report issues or
 ask questions [here](https://github.com/riatelab/osrm/issues). See the
 [CONTRIBUTING.md](https://github.com/riatelab/osrm/blob/master/CONTRIBUTING.md)
 file for detailed instructions.
+
+## Acknowledgements
+
+Many thanks to the editor (@elbeejay) and reviewers (@JosiahParry,
+@mikemahoney218 and @wcjochem) of the JOSS article.  
+This publication has led to a significant improvement in the code base
+and documentation of the package.

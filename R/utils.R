@@ -47,16 +47,16 @@ tab_format <- function(res, src, dst, type) {
 coord_format <- function(res, src, dst) {
   sources <- data.frame(matrix(
     unlist(res$sources$location,
-      use.names = T
+      use.names = TRUE
     ),
-    ncol = 2, byrow = T,
+    ncol = 2, byrow = TRUE,
     dimnames = list(src$id, c("lon", "lat"))
   ))
   destinations <- data.frame(matrix(
     unlist(res$destinations$location,
-      use.names = T
+      use.names = TRUE
     ),
-    ncol = 2, byrow = T,
+    ncol = 2, byrow = TRUE,
     dimnames = list(dst$id, c("lon", "lat"))
   ))
   return(list(sources = sources, destinations = destinations))
@@ -98,7 +98,7 @@ input_table <- function(x, id) {
         call. = FALSE
       )
     }
-    if (ncol(x) == 2 && is.numeric(x[, 1]) && is.numeric(x[, 2])) {
+    if (ncol(x) == 2 && is.numeric(x[, 1, drop = TRUE]) && is.numeric(x[, 2, drop = TRUE])) {
       rn <- row.names(x)
       if (is.null(rn)) {
         rn <- 1:lx
@@ -106,8 +106,8 @@ input_table <- function(x, id) {
 
       x <- data.frame(
         id = rn,
-        lon = clean_coord(x[, 1]),
-        lat = clean_coord(x[, 2])
+        lon = clean_coord(x[, 1, drop = TRUE]),
+        lat = clean_coord(x[, 2, drop = TRUE])
       )
       return(x)
     } else {
@@ -135,8 +135,8 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
   oprj <- NA
   if (single) {
     if (is.vector(x)) {
-      if (length(x) == 2 & is.numeric(x)) {
-        if (x[1] > 180 | x[1] < -180 | x[2] > 90 | x[2] < -90) {
+      if (length(x) == 2 && is.numeric(x)) {
+        if (x[1] > 180 || x[1] < -180 || x[2] > 90 || x[2] < -90) {
           stop(
             paste0(
               "longitude is bounded by the interval [-180, 180], ",
@@ -191,7 +191,7 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
         idx <- id
       }
       x <- unlist(x)
-      if (length(x) == 2 & is.numeric(x)) {
+      if (length(x) == 2 && is.numeric(x)) {
         lon <- clean_coord(x[1])
         lat <- clean_coord(x[2])
         return(list(id = idx, lon = lon, lat = lat, oprj = oprj))
@@ -251,9 +251,9 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
       if (lx < 2) {
         stop('"loc" should have at least 2 rows.', call. = FALSE)
       }
-      if (ncol(x) == 2 && is.numeric(x[, 1]) && is.numeric(x[, 2])) {
-        lon <- clean_coord(x[, 1])
-        lat <- clean_coord(x[, 2])
+      if (ncol(x) == 2 && is.numeric(x[, 1, drop = TRUE]) && is.numeric(x[, 2, drop = TRUE])) {
+        lon <- clean_coord(x[, 1, drop = TRUE])
+        lat <- clean_coord(x[, 2, drop = TRUE])
         rn <- row.names(x)
         if (is.null(rn)) {
           rn <- 1:lx

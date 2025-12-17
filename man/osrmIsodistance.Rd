@@ -8,8 +8,9 @@ osrmIsodistance(
   loc,
   breaks = seq(from = 0, to = 10000, length.out = 4),
   exclude,
-  res = 30,
-  returnclass,
+  n = 500,
+  smooth = FALSE,
+  res,
   osrm.server = getOption("osrm.server"),
   osrm.profile = getOption("osrm.profile")
 )
@@ -30,11 +31,14 @@ in meters.}
 
 \item{exclude}{pass an optional "exclude" request option to the OSRM API.}
 
-\item{res}{number of points used to compute isodistances, one side of the
-square grid, the total number of points will be res*res. Increase res to
-obtain more detailed isodistances.}
+\item{n}{number of points used to compute isodistances, possible values are
+c(100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000).}
 
-\item{returnclass}{deprecated.}
+\item{smooth}{if TRUE a moving window with a gaussian blur is applied to 
+distances. This option may be usefull to remove small patches of hard to 
+reach areas. The computed isodistances are less precise but better looking.}
+
+\item{res}{deprecated}
 
 \item{osrm.server}{the base URL of the routing server.
 getOption("osrm.server") by default.}

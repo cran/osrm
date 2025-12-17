@@ -372,16 +372,36 @@ fill_grid <- function(destinations, measure, sgrid, res, tmax) {
     n = c(res, res)
   )
   ag_pt <- function(x) {
-    if (length(x > 0)) {
+    if (length(x) > 0) {
       min(rpt[["measure"]][x], na.rm = TRUE)
     } else {
-      tmax + 1
+      NA
     }
   }
   inter <- st_intersects(xx, rpt)
   sgrid$measure <- unlist(lapply(inter, ag_pt))
-  sgrid[is.infinite(sgrid$measure), "measure"] <- tmax + 1
-  sgrid[is.nan(sgrid$measure), "measure"] <- tmax + 1
-  sgrid[sgrid$measure > tmax, "measure"] <- tmax + 1
+  sgrid[is.infinite(sgrid$measure), "measure"] <- NA
+  sgrid[is.nan(sgrid$measure), "measure"] <- NA
   sgrid
 }
+
+get_resolution <- function(res, n){
+  ref <- data.frame(
+    res = c(13, 18, 27, 37, 52, 81, 114, 161, 254),
+    n = c(100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000)
+  )
+  
+  if(!missing(res)){
+    message("'res' is deprecated, use 'n' instead.")
+    return(res)
+  }
+  if(!n %in% ref$n){
+    warning("n is not set to an accepted value, n = 500 will be used.", 
+            call. = FALSE)
+    return(27)
+  }
+  return(ref[ref$n == n, 'res'])
+}
+
+
+

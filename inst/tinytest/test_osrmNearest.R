@@ -9,6 +9,9 @@ if(demo_server){
   expect_true(nrow(r) == 1)
   expect_identical(colnames(r), c("id", "distance", "geometry"))
   expect_true(st_geometry_type(r) == "POINT")
+  r <- osrmNearest(loc = x_sf[1, ], n = 10)
+  wait()
+  expect_length(r$id, 10)
   
   ################# DEMO BIKE #####################
   options(osrm.server = "https://routing.openstreetmap.de/", osrm.profile = "bike")

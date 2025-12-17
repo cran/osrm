@@ -6,6 +6,7 @@
 \usage{
 osrmNearest(
   loc,
+  n = 1,
   exclude,
   osrm.server = getOption("osrm.server"),
   osrm.profile = getOption("osrm.profile")
@@ -19,8 +20,10 @@ osrmNearest(
   \item an sfc object of type POINT,
   \item an sf object of type POINT.
 }
-If \code{src} is a data.frame, a matrix, an sfc object or an sf object then
+If \code{loc} is a data.frame, a matrix, an sfc object or an sf object then
 only the first row or element is considered.}
+
+\item{n}{number of nearest points}
 
 \item{exclude}{pass an optional "exclude" request option to the OSRM API.}
 
@@ -32,7 +35,7 @@ only the first row or element is considered.}
 The output of this function is an sf POINT of the point on the street
 network.\cr
 It contains 2 fields: \itemize{
-  \item id, the point identifierv
+  \item id, the point identifier
   \item distance, the distance in meters to the supplied input point.
   }
 }

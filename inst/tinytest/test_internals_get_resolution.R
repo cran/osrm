@@ -1,0 +1,5 @@
+suppressMessages(expect_equal(osrm:::get_resolution(res = 10), 10))
+expect_message(osrm:::get_resolution(res = 10))
+expect_warning(osrm:::get_resolution(n = 101))
+suppressWarnings(expect_equal(osrm:::get_resolution(n = 101), 27))
+expect_equal(osrm:::get_resolution(n = 50000), 254)

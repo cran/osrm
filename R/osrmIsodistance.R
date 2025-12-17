@@ -15,10 +15,12 @@
 #' @param breaks a numeric vector of break values to define isodistance areas,
 #' in meters.
 #' @param exclude pass an optional "exclude" request option to the OSRM API.
-#' @param res number of points used to compute isodistances, one side of the
-#' square grid, the total number of points will be res*res. Increase res to
-#' obtain more detailed isodistances.
-#' @param returnclass deprecated.
+#' @param n number of points used to compute isodistances, possible values are
+#' c(100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000).
+#' @param res deprecated
+#' @param smooth if TRUE a moving window with a gaussian blur is applied to 
+#' distances. This option may be usefull to remove small patches of hard to 
+#' reach areas. The computed isodistances are less precise but better looking. 
 #' @param osrm.server the base URL of the routing server.
 #' getOption("osrm.server") by default.
 #' @param osrm.profile the routing profile to use, e.g. "car", "bike" or "foot"
@@ -62,46 +64,47 @@
 #' }
 #' }
 osrmIsodistance <- function(loc, breaks = seq(from = 0, to = 10000, length.out = 4),
-                            exclude, res = 30, returnclass,
+                            exclude, n = 500, smooth = FALSE, res,
                             osrm.server = getOption("osrm.server"),
                             osrm.profile = getOption("osrm.profile")) {
   opt <- options(error = NULL)
   on.exit(options(opt), add = TRUE)
-
-  if (!missing(returnclass)) {
-    warning('"returnclass" is deprecated.', call. = FALSE)
-  }
-
+  
   # input management
   loc <- input_route(x = loc, id = "loc", single = TRUE)
   oprj <- loc$oprj
   loc <- st_as_sf(data.frame(lon = loc$lon, lat = loc$lat),
-    coords = c("lon", "lat"), crs = 4326
+                  coords = c("lon", "lat"), crs = 4326
   )
   loc <- st_transform(loc, "epsg:3857")
-
+  
   # max distance management to see how far to extend the grid to get measures
   breaks <- unique(sort(breaks))
   tmax <- max(breaks)
-
+  dmax <- tmax * 1.2
+  
   # gentle sleeptime & param for demo server
   if (osrm.server != "https://routing.openstreetmap.de/") {
     sleeptime <- 0
-    deco <- 450
+    deco <- 999
   } else {
     sleeptime <- 1
     deco <- 75
   }
-
+  
+  # get the resolution
+  res <- get_resolution(res = res, n = n)
   # create a grid to obtain measures
-  sgrid <- rgrid(loc = loc, dmax = tmax * 1.5, res = res)
-
+  ogrid <- rgrid(loc = loc, dmax = dmax, res = res)
+  sgrid <- ogrid[sf::st_is_within_distance(ogrid, loc, dmax, sparse = FALSE), ]
+  
   # slice the grid to make several API calls
   lsgr <- nrow(sgrid)
   niter <- lsgr %/% deco
   nitersup <- lsgr %% deco
   ltot <- niter + ifelse(nitersup > 0, 1, 0)
   listDur <- listDest <- vector(mode = "list", length = ltot)
+  # get measures and destinations points
   if (niter > 0) {
     for (i in 1:niter) {
       dmat <- osrmTable(
@@ -129,16 +132,21 @@ osrmIsodistance <- function(loc, breaks = seq(from = 0, to = 10000, length.out =
     listDur[[ltot]] <- dmat$distances
     listDest[[ltot]] <- dmat$destinations
   }
-
+  
   measure <- do.call(c, listDur)
   destinations <- do.call(rbind, listDest)
-
+  # for testing purpose
+  # return(list(destinations = destinations, measure = measure,
+  #             sgrid = sgrid, res = res, tmax = tmax))
+  
+  
   # assign values to the grid
-  sgrid <- fill_grid(
+  g <- fill_grid(
     destinations = destinations, measure = measure,
-    sgrid = sgrid, res = res, tmax = tmax
+    sgrid = ogrid, res = res, tmax = tmax
   )
-  if (min(sgrid$measure) >= tmax + 1) {
+  
+  if (min(g$measure, na.rm = TRUE) > tmax) {
     warning(
       paste0(
         "An empty object is returned. ",
@@ -155,33 +163,40 @@ osrmIsodistance <- function(loc, breaks = seq(from = 0, to = 10000, length.out =
     )
     return(empty_res)
   }
+  
+  # All values not within breaks are set to tmax+1 
+  g[is.na(g$measure), "measure"] <- tmax + .1
+  g[is.nan(g$measure), "measure"] <- tmax + .1
+  g[is.infinite(g$measure), "measure"] <- tmax + .1
+  
+  if (isTRUE(smooth)) {
+    if (!requireNamespace("terra", quietly = TRUE)) {
+      stop(paste0(
+        "'terra' package is needed for this function to work.",
+        "Please install it."
+      ), call. = FALSE)
+    }
+    r <- terra::rast(g[, c("COORDX", "COORDY", "measure"), drop = TRUE], 
+                     crs = "epsg:3857")
+    k <- terra::res(r)[1] / 2
+    rr <- terra::disagg(x = r, fact = 4, method  =  "near")
+    mat <- terra::focalMat(x = rr, d = k, type = "Gauss")
+    g <- terra::focal(x = rr, w = mat, fun = mean, na.rm = TRUE)
+  }
+  
   # computes isopolygones
-  iso <- mapiso(x = sgrid, breaks = breaks, var = "measure")
-  # get rid of out of breaks polys
+  iso <- mapiso(x = g, breaks = breaks, var = "measure")
+  # get rid of out of max breaks polys
   iso <- iso[-nrow(iso), ]
   # fisrt line always start at 0
   iso[1, "isomin"] <- 0
-
+  
   # proj mgmnt
   if (!is.na(oprj)) {
     iso <- st_transform(x = iso, oprj)
   } else {
     iso <- st_transform(x = iso, 4326)
   }
-
+  
   return(iso)
-}
-
-#' @name osrmIsometric
-#' @description deprecated, use \link{osrmIsodistance} instead.
-#' @title deprecated
-#' @param ... deprecated
-#' @return deprecated
-#' @keywords internal
-#' @export
-osrmIsometric <- function(...) {
-  warning("This function is deprecated, use osrmIsodistance() instead.",
-    call. = FALSE
-  )
-  osrmIsodistance(...)
 }

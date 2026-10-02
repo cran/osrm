@@ -27,7 +27,6 @@ rgrid <- function(loc, dmax, res) {
 }
 
 
-
 # output formating
 tab_format <- function(res, src, dst, type) {
   if (type == "duration") {
@@ -35,8 +34,8 @@ tab_format <- function(res, src, dst, type) {
     # From sec to minutes
     mat <- round(mat / (60), 1)
   } else {
-    mat <- res$distances
-    mat <- round(mat, 0)
+    mat <- res$distances / 1000
+    mat <- round(mat, 3)
   }
   # col and row names management
   dimnames(mat) <- list(src$id, dst$id)
@@ -52,6 +51,8 @@ coord_format <- function(res, src, dst) {
     ncol = 2, byrow = TRUE,
     dimnames = list(src$id, c("lon", "lat"))
   ))
+  sources$snapping_distance <- round(res$sources$distance / 1000, 3)
+
   destinations <- data.frame(matrix(
     unlist(res$destinations$location,
       use.names = TRUE
@@ -59,7 +60,23 @@ coord_format <- function(res, src, dst) {
     ncol = 2, byrow = TRUE,
     dimnames = list(dst$id, c("lon", "lat"))
   ))
+  destinations$snapping_distance <- round(res$destinations$distance / 1000, 3)
+
   return(list(sources = sources, destinations = destinations))
+}
+
+valid_coords <- function(lon, lat, id) {
+  ok <- is.finite(lon) & is.finite(lat)
+  if (any(!ok)) {
+    stop(
+      paste0(
+        '"',
+        id,
+        '" contains missing (NA), infinite (Inf/-Inf) or invalid (NaN) coordinates.'
+      ),
+      call. = FALSE
+    )
+  }
 }
 
 input_table <- function(x, id) {
@@ -84,6 +101,7 @@ input_table <- function(x, id) {
     }
     x <- sf::st_transform(x = x, crs = 4326)
     coords <- sf::st_coordinates(x)
+    valid_coords(lon = coords[, 1], lat = coords[, 2], id = id)
     x <- data.frame(
       id = idx,
       lon = clean_coord(coords[, 1]),
@@ -103,7 +121,7 @@ input_table <- function(x, id) {
       if (is.null(rn)) {
         rn <- 1:lx
       }
-
+      valid_coords(lon = x[, 1, drop = TRUE], lat = x[, 2, drop = TRUE], id = id)
       x <- data.frame(
         id = rn,
         lon = clean_coord(x[, 1, drop = TRUE]),
@@ -136,6 +154,7 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
   if (single) {
     if (is.vector(x)) {
       if (length(x) == 2 && is.numeric(x)) {
+        valid_coords(x[1], x[2], id)
         if (x[1] > 180 || x[1] < -180 || x[2] > 90 || x[2] < -90) {
           stop(
             paste0(
@@ -177,6 +196,7 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
       }
       x <- sf::st_transform(x = x, crs = 4326)
       coords <- sf::st_coordinates(x)
+      valid_coords(coords[, 1], coords[, 2], id = id)
       lon <- clean_coord(coords[, 1])
       lat <- clean_coord(coords[, 2])
       return(list(id = idx, lon = lon, lat = lat, oprj = oprj))
@@ -192,6 +212,7 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
       }
       x <- unlist(x)
       if (length(x) == 2 && is.numeric(x)) {
+        valid_coords(x[1], x[2], id = id)
         lon <- clean_coord(x[1])
         lat <- clean_coord(x[2])
         return(list(id = idx, lon = lon, lat = lat, oprj = oprj))
@@ -238,6 +259,7 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
       }
       x <- sf::st_transform(x = x, crs = 4326)
       coords <- sf::st_coordinates(x)
+      valid_coords(coords[, 1], coords[, 2], id = id)
       lon <- clean_coord(coords[, 1])
       lat <- clean_coord(coords[, 2])
       if (!all.ids) {
@@ -252,6 +274,7 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
         stop('"loc" should have at least 2 rows.', call. = FALSE)
       }
       if (ncol(x) == 2 && is.numeric(x[, 1, drop = TRUE]) && is.numeric(x[, 2, drop = TRUE])) {
+        valid_coords(x[, 1, drop = TRUE], x[, 2, drop = TRUE], id)
         lon <- clean_coord(x[, 1, drop = TRUE])
         lat <- clean_coord(x[, 2, drop = TRUE])
         rn <- row.names(x)
@@ -283,11 +306,6 @@ input_route <- function(x, id, single = TRUE, all.ids = FALSE) {
     }
   }
 }
-
-
-
-
-
 
 
 # construct the base url
@@ -330,7 +348,6 @@ encode_coords <- function(x, osrm.server) {
   }
   return(result)
 }
-
 
 
 test_http_error <- function(r) {
@@ -385,23 +402,38 @@ fill_grid <- function(destinations, measure, sgrid, res, tmax) {
   sgrid
 }
 
-get_resolution <- function(res, n){
+get_resolution <- function(res, n) {
   ref <- data.frame(
     res = c(13, 18, 27, 37, 52, 81, 114, 161, 254),
     n = c(100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000)
   )
-  
-  if(!missing(res)){
+
+  if (!missing(res)) {
     message("'res' is deprecated, use 'n' instead.")
     return(res)
   }
-  if(!n %in% ref$n){
-    warning("n is not set to an accepted value, n = 500 will be used.", 
-            call. = FALSE)
+  if (!n %in% ref$n) {
+    warning("n is not set to an accepted value, n = 500 will be used.",
+      call. = FALSE
+    )
     return(27)
   }
-  return(ref[ref$n == n, 'res'])
+  return(ref[ref$n == n, "res"])
 }
 
 
-
+#' @importFrom utils globalVariables
+.osrm <- new.env(parent = emptyenv())
+globalVariables(".osrm", package = "osrm", add = FALSE)
+.osrm$msg <- TRUE
+msg_units <- function() {
+  if (isTRUE(.osrm$msg)) {
+    msg <- paste0(
+      "For all functions in the package, ",
+      "distances are expressed in kilometers and durations in minutes.\n",
+      "This message is displayed once per session."
+    )
+    message(msg)
+    .osrm$msg <- FALSE
+  }
+}

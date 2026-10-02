@@ -2,7 +2,7 @@
 #' @name  osrm
 #' @description An interface between R and the OSRM API.\cr
 #' OSRM is a routing
-#' service based on OpenStreetMap data. See <http://project-osrm.org/> for more
+#' service based on OpenStreetMap data. See <https://project-osrm.org/> for more
 #' information. This package enables the computation of routes, trips, isochrones and
 #' travel distances matrices (travel time and kilometric distance).\cr
 #' \itemize{
@@ -30,10 +30,9 @@
 #'
 #'
 #'
-#'
 #' @note
 #' This package relies on the usage of a running OSRM service (tested with
-#' version 6.0.0 of the OSRM API).\cr
+#' version 26.10.0 of the OSRM API).\cr
 #'
 #'
 #' To set the OSRM server, change the \code{osrm.server} option:\cr

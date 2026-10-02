@@ -6,7 +6,7 @@
 \usage{
 osrmIsodistance(
   loc,
-  breaks = seq(from = 0, to = 10000, length.out = 4),
+  breaks = seq(from = 0, to = 10, length.out = 4),
   exclude,
   n = 500,
   smooth = FALSE,
@@ -27,15 +27,15 @@ If \code{loc} is a data.frame, a matrix, an sfc object or an sf object then
 only the first row or element is considered.}
 
 \item{breaks}{a numeric vector of break values to define isodistance areas,
-in meters.}
+in kilometers.}
 
 \item{exclude}{pass an optional "exclude" request option to the OSRM API.}
 
 \item{n}{number of points used to compute isodistances, possible values are
 c(100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000).}
 
-\item{smooth}{if TRUE a moving window with a gaussian blur is applied to 
-distances. This option may be usefull to remove small patches of hard to 
+\item{smooth}{if TRUE a moving window with a gaussian blur is applied to
+distances. This option may be usefull to remove small patches of hard to
 reach areas. The computed isodistances are less precise but better looking.}
 
 \item{res}{deprecated}
@@ -51,8 +51,8 @@ getOption("osrm.profile") by default.}
 The output of this function is an sf MULTIPOLYGON of isodistances.\cr
 It contains 3 fields: \itemize{
   \item id, an identifier
-  \item isomin, the minimum value of the isodistance polygon in meters
-  \item isomax, the maximum value of the isodistance polygon in meters
+  \item isomin, the minimum value of the isodistance polygon in kilometers
+  \item isomax, the maximum value of the isodistance polygon in kilometers
 }
 If loc is a vector, a data.frame or a matrix the coordinate
 reference system (CRS) of the output is EPSG:4326 (WGS84).\cr
@@ -71,12 +71,12 @@ apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
   quiet = TRUE
 )
 # Get isochones with lon/lat coordinates
-iso <- osrmIsodistance(loc = c(13.43, 52.47), breaks = seq(0, 500, 100))
+iso <- osrmIsodistance(loc = c(13.43, 52.47), breaks = seq(0, 5, 1))
 # Map
 plot(iso["isomax"], breaks = sort(unique(c(iso$isomin, iso$isomax))))
 
 # Get isochones with an sf POINT
-iso2 <- osrmIsodistance(loc = apotheke.sf[11, ], breaks = seq(0, 500, 100))
+iso2 <- osrmIsodistance(loc = apotheke.sf[11, ], breaks = seq(0, 5, 1))
 # Map
 if (require("mapsf")) {
   mapsf::mf_map(
@@ -84,7 +84,7 @@ if (require("mapsf")) {
     breaks = sort(unique(c(iso2$isomin, iso2$isomax))),
     pal = "Burg", border = NA, leg_pos = "topleft",
     leg_val_rnd = 0,
-    leg_frame = TRUE, leg_title = "Isochrones\n(min)"
+    leg_frame = TRUE, leg_title = "Isodistance\n(m)"
   )
 }
 }

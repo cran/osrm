@@ -1,9 +1,27 @@
+# osrm version 6.0.0
+
+## Major change
+* use kilometers for distances in all functions and add a once-per-session 
+message about this breaking change affecting osrmNearest(), osrmTable() and 
+osrmIsodistance()
+
+## Fix
+* return an error on input coordinates containing NA, NaN or Inf values 
+(#141 thanks to @neon-ninja)
+* harmonize the accuracy of results to the meter for distances and to one 
+decimal place of a minute for durations in all functions (#137)
+
+## Feat
+* add snapping distance to results in osrmTable(), osrmRoute() and osrmTrip()
+(#136 thanks to @e-kotov)
+
+
 # osrm version 5.0.0
 
 ## Major changes
 * remove deprecated arguments ("returnclass")
 * remove deprecated function (osrmIsometric())
-* deprecate "res" is osrmIso*(), use "n" instead.
+* deprecate "res" in osrmIso*(), use "n" instead.
 
 ## feat 
 * add a "smooth" parameter to smooth isochrones and isodistances

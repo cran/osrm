@@ -20,7 +20,7 @@
 #' network.\cr
 #' It contains 2 fields: \itemize{
 #'   \item id, the point identifier
-#'   \item distance, the distance in meters to the supplied input point.
+#'   \item distance, the distance in kilometers to the supplied input point.
 #'   }
 #' @importFrom sf st_as_sfc st_crs st_geometry st_sf st_as_sf st_transform
 #' @examples
@@ -34,29 +34,30 @@
 #' }
 #' @export
 osrmNearest <- function(
-    loc,
-    n = 1, 
-    exclude,
-    osrm.server = getOption("osrm.server"),
-    osrm.profile = getOption("osrm.profile")) {
+  loc,
+  n = 1,
+  exclude,
+  osrm.server = getOption("osrm.server"),
+  osrm.profile = getOption("osrm.profile")
+) {
   opt <- options(error = NULL)
   on.exit(options(opt), add = TRUE)
-  
+  msg_units()
   url <- base_url(osrm.server, osrm.profile, "nearest")
-  
+
   # from src to dst via x, y, z... (data.frame or sf input)
   loc <- input_route(x = loc, single = TRUE, id = "loc")
   id <- loc$id
   oprj <- loc$oprj
   coords <- paste0(loc$lon, ",", loc$lat)
-  
+
   url <- paste0(url, coords, "?number=", n, "&generate_hints=false")
-  
+
   # adding exclude parameter
   if (!missing(exclude)) {
     url <- paste0(url, "&exclude=", exclude)
   }
-  
+
   e <- try(
     {
       req_handle <- curl::new_handle(verbose = FALSE)
@@ -68,34 +69,33 @@ osrmNearest <- function(
   if (inherits(e, "try-error")) {
     stop(e, call. = FALSE)
   }
-  
+
   # test result validity
   test_http_error(r)
   res <- RcppSimdJson::fparse(rawToChar(r$content))
-  
+
   # Coordinates of the point
   r <- res$waypoints
-  
+
   rosf <- list()
-  for(i in 1:nrow(r)){
+  for (i in 1:nrow(r)) {
     rcoords <- paste0(unlist(r$location[i]), collapse = " ")
     rosf[[i]] <- st_sf(
       id = id,
-      distance = round(r$distance[i], 1),
+      distance = round(r$distance[i] / 1000, 3),
       geometry = st_as_sfc(paste0("POINT(", rcoords, ")")),
       crs = 4326
     )
   }
-  
+
   rosf <- do.call(rbind, rosf)
   # Convert to POINT
-  
-  
-  
+
+
   # prj
   if (!is.na(oprj)) {
     rosf <- st_transform(rosf, oprj)
   }
-  
+
   return(rosf)
 }

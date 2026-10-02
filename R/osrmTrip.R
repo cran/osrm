@@ -34,6 +34,8 @@
 #' }
 #' \item{summary}{A list with 2 components: total duration (in minutes)
 #' and total distance (in kilometers) of the trip.}
+#' \item{waypoints}{An sf POINT object of the snapped waypoints used in the trip,
+#' containing their \code{id} and their \code{snapping_distance} (in kilometers).}
 #' }
 #' @export
 #' @examples
@@ -45,13 +47,11 @@
 #' # Get a trip with a set of points (sf POINT)
 #' trips <- osrmTrip(loc = apotheke.sf[1:5, ])
 #' mytrip <- trips[[1]]$trip
+#' mypts <- trips[[1]]$waypoints
 #' # Display the trip
 #' plot(st_geometry(mytrip), col = "black", lwd = 4)
 #' plot(st_geometry(mytrip), col = c("red", "white"), lwd = 1, add = TRUE)
-#' plot(st_geometry(apotheke.sf[1:5, ]),
-#'   pch = 21, bg = "red", cex = 1,
-#'   add = TRUE
-#' )
+#' plot(st_geometry(mypts), pch = 21, bg = "red", cex = 1, add = TRUE)
 #' }
 osrmTrip <- function(loc, exclude = NULL, overview = "simplified",
                      osrm.server = getOption("osrm.server"),
@@ -98,8 +98,6 @@ osrmTrip <- function(loc, exclude = NULL, overview = "simplified",
   test_http_error(r)
   res <- RcppSimdJson::fparse(rawToChar(r$content))
 
-
-  # Get all the waypoints
   waypointsg <- data.frame(res$waypoints[, c(1, 2, 5)],
     matrix(unlist(res$waypoints$location),
       byrow = TRUE, ncol = 2
@@ -164,8 +162,8 @@ osrmTrip <- function(loc, exclude = NULL, overview = "simplified",
     end <- start[c(2:length(start), 1)]
     sldf <- st_sf(
       start = start, end = end,
-      duration = res$trips[nt, ]$legs[[1]][, "duration"] / 60,
-      distance = res$trips[nt, ]$legs[[1]][, "distance"] / 1000,
+      duration = round(res$trips[nt, ]$legs[[1]][, "duration"] / 60, 1),
+      distance = round(res$trips[nt, ]$legs[[1]][, "distance"] / 1000, 3),
       geometry = st_as_sfc(wktl, crs = 4326)
     )
     # Reproj
@@ -174,10 +172,18 @@ osrmTrip <- function(loc, exclude = NULL, overview = "simplified",
     }
     # Build tripSummary
     tripSummary <- list(
-      duration = res$trips[nt, ]$duration / 60,
-      distance = res$trips[nt, ]$distance / 1000
+      duration = round(res$trips[nt, ]$duration / 60, 1),
+      distance = round(res$trips[nt, ]$distance / 1000, 3)
     )
-    trips[[nt]] <- list(trip = sldf, summary = tripSummary)
+
+    trip_waypoints <- st_as_sf(waypoints, coords = c("X1", "X2"), crs = "EPSG:4326")
+    trip_waypoints <- trip_waypoints[, c("id", "distance")]
+    trip_waypoints$distance <- round(trip_waypoints$distance / 1000, 3)
+    names(trip_waypoints)[2] <- "snapping_distance"
+    if (!is.na(oprj)) {
+      trip_waypoints <- sf::st_transform(trip_waypoints, oprj)
+    }
+    trips[[nt]] <- list(trip = sldf, summary = tripSummary, waypoints = trip_waypoints)
   }
   return(trips)
 }

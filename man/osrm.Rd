@@ -8,7 +8,7 @@
 \description{
 An interface between R and the OSRM API.\cr
 OSRM is a routing
-service based on OpenStreetMap data. See <http://project-osrm.org/> for more
+service based on OpenStreetMap data. See <https://project-osrm.org/> for more
 information. This package enables the computation of routes, trips, isochrones and
 travel distances matrices (travel time and kilometric distance).\cr
 \itemize{
@@ -36,7 +36,7 @@ isodistances.}
 }
 \note{
 This package relies on the usage of a running OSRM service (tested with
-version 6.0.0 of the OSRM API).\cr
+version 26.10.0 of the OSRM API).\cr
 
 
 To set the OSRM server, change the \code{osrm.server} option:\cr
@@ -59,19 +59,26 @@ The csv dataset uses WGS 84 (EPSG:4326).\cr
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/riatelab/osrm}
-  \item Report bugs at \url{https://github.com/riatelab/osrm/issues}
+  \item \url{https://codeberg.org/riatelab/osrm}
+  \item \url{https://riatelab.r-universe.dev/osrm}
+  \item Report bugs at \url{https://codeberg.org/riatelab/osrm/issues}
 }
 
 }
 \author{
 \strong{Maintainer}: Timothée Giraud \email{timothee.giraud@cnrs.fr} (\href{https://orcid.org/0000-0002-1932-3323}{ORCID})
 
+Authors:
+\itemize{
+  \item Timothée Giraud \email{timothee.giraud@cnrs.fr} (\href{https://orcid.org/0000-0002-1932-3323}{ORCID})
+}
+
 Other contributors:
 \itemize{
   \item Robin Cura (\href{https://orcid.org/0000-0001-5926-1828}{ORCID}) [contributor]
   \item Matthieu Viry (\href{https://orcid.org/0000-0002-0693-8556}{ORCID}) [contributor]
   \item Robin Lovelace (\href{https://orcid.org/0000-0001-5679-6536}{ORCID}) [contributor]
+  \item Egor Kotov (\href{https://orcid.org/0000-0001-6690-5345}{ORCID}) [contributor]
 }
 
 }

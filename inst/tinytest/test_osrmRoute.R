@@ -7,26 +7,31 @@ if(demo_server){
   expect_true(inherits(r, "sf"))
   expect_identical(st_crs(r), st_crs(x_sf))
   expect_true(nrow(r) == 1)
-  expect_identical(colnames(r), 
-                   c("src", "dst", "duration", "distance", "geometry"))
+  expect_identical(colnames(r), c("src", "dst", "duration", "distance", "geometry"))
   expect_true(st_geometry_type(r) == "LINESTRING")
   
-  r <- osrmRoute(loc = x_sf[1:3, ])
+  # snapping_distance = TRUE
+  r <- osrmRoute(src = x_sf[1, ], dst = x_sf[16, ], snapping_distance = TRUE)
   wait()
-  expect_true(inherits(r, "sf"))
-  expect_identical(st_crs(r), st_crs(x_sf))
-  expect_true(nrow(r) == 1)
-  expect_identical(colnames(r), 
-                   c("src", "dst", "duration", "distance", "geometry"))
-  expect_true(st_geometry_type(r) == "LINESTRING")
-  
+  expect_true(is.list(r))
+  expect_true(inherits(r$route, "sf"))
+  expect_true(inherits(r$snapping, "sf"))
+  expect_true(nrow(r$snapping) == 2)
+  expect_true("snapping_distance" %in% colnames(r$snapping))
+
   # Return only duration and distance
   r <- osrmRoute(loc = x_sf[1:3, ], overview = FALSE)
   wait()
   expect_true(is.numeric(r))
   expect_true(length(r) == 2)
   
-  ################# DEMO BIKE #####################
+  # Return only duration and distance + snapping_distance
+  r <- osrmRoute(loc = x_sf[1:3, ], overview = FALSE, snapping_distance = TRUE)
+  wait()
+  expect_true(is.list(r))
+  expect_true(is.numeric(r$route))
+  expect_true(inherits(r$snapping, "sf"))
+  expect_true(nrow(r$snapping) == 3)
   options(osrm.server = "https://routing.openstreetmap.de/", osrm.profile = "bike")
   r <- osrmRoute(src = x_sf[1, ], dst = x_sf[16, ])
   wait()
@@ -51,8 +56,6 @@ if(demo_server){
   wait()
   expect_true(is.numeric(r))
   expect_true(length(r) == 2)
-  
-  
   
   ############## DEMO FOOT #################"""""
   options(osrm.server = "https://routing.openstreetmap.de/", osrm.profile = "foot")
@@ -84,19 +87,16 @@ if(demo_server){
   r <- osrmRoute(src = x_sf[1, ], dst = x_sf[16, ], 
                  osrm.server = "https://router.project-osrm.org/", 
                  osrm.profile = "driving")
-  wait()
   expect_true(inherits(r, "sf"))
   
   # server error
   expect_error(osrmRoute(src = x_sf[1, ], dst = x_sf[16, ], 
                          osrm.server = "https://router.project-osrm.orgS/", 
                          osrm.profile = "driving"))
-  wait()
   expect_error(osrmRoute(src = x_sf[1, ], dst = x_sf[16, ], 
                          exclude = "motorway",
                          osrm.server = "https://router.project-osrm.org/", 
                          osrm.profile = "driving"))
-  wait()
 }
 
 

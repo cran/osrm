@@ -46,6 +46,8 @@ distance (length of the step in kilometers).
 }
 \item{summary}{A list with 2 components: total duration (in minutes)
 and total distance (in kilometers) of the trip.}
+\item{waypoints}{An sf POINT object of the snapped waypoints used in the trip,
+containing their \code{id} and their \code{snapping_distance} (in kilometers).}
 }
 }
 \description{
@@ -68,12 +70,10 @@ apotheke.sf <- st_read(system.file("gpkg/apotheke.gpkg", package = "osrm"),
 # Get a trip with a set of points (sf POINT)
 trips <- osrmTrip(loc = apotheke.sf[1:5, ])
 mytrip <- trips[[1]]$trip
+mypts <- trips[[1]]$waypoints
 # Display the trip
 plot(st_geometry(mytrip), col = "black", lwd = 4)
 plot(st_geometry(mytrip), col = c("red", "white"), lwd = 1, add = TRUE)
-plot(st_geometry(apotheke.sf[1:5, ]),
-  pch = 21, bg = "red", cex = 1,
-  add = TRUE
-)
+plot(st_geometry(mypts), pch = 21, bg = "red", cex = 1, add = TRUE)
 }
 }
